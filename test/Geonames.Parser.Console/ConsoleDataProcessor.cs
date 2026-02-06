@@ -18,10 +18,8 @@ internal class ConsoleDataProcessor : IDataProcessor
 
     public async Task<int> ProcessAdminCodeBatchAsync(AdminLevel level, IEnumerable<AdminXCodeRecord> batch, CancellationToken ct = default)
     {
-        var i = 0;
         foreach (var record in batch)
         {
-            i++;
             if (level == AdminLevel.Admin1)
             {
                 if (record is Admin1CodeRecord admin1)
@@ -47,7 +45,7 @@ internal class ConsoleDataProcessor : IDataProcessor
                 continue;
             }
         }
-        return i;
+        return batch.Count();
     }
 
     public async Task<int> ProcessGeoNameBatchAsync(ICollection<GeonameRecord> batch, CancellationToken ct = default)

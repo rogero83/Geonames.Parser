@@ -1,9 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>true</IsPackable>
+
+		<PackageId>R83.Geonames.Parser.Contract</PackageId>
+		<Version>0.1.0</Version>
+		<Authors>Ruggiero Centaro (aka Rogero83)</Authors>
+		<Description>Geonames parser contract</Description>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/rogero83/Geonames.Parser</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/rogero83/Geonames.Parser</PackageProjectUrl>
+		<PackageTags>dotnet;net8;net9;net10</PackageTags>		
+	</PropertyGroup>
 
 </Project>
