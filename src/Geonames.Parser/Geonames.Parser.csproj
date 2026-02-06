@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 		<IsPackable>true</IsPackable>
 
-		<PackageId>R83.Geonames.Parser.Contract</PackageId>
+		<PackageId>R83.Geonames.Parser</PackageId>
 		<Version>0.1.0</Version>
 		<Authors>Ruggiero Centaro (aka Rogero83)</Authors>
 		<Description>Geonames parser contract</Description>
