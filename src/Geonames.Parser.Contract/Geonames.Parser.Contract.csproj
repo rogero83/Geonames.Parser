@@ -13,7 +13,15 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<RepositoryUrl>https://github.com/rogero83/Geonames.Parser</RepositoryUrl>
 		<PackageProjectUrl>https://github.com/rogero83/Geonames.Parser</PackageProjectUrl>
-		<PackageTags>dotnet;net8;net9;net10</PackageTags>		
+		<PackageTags>dotnet;net8;net9;net10</PackageTags>
+
+		<PackageIcon>logo-128x128.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
+	<ItemGroup>
+		<None Include="nuget\logo-128x128.png" Pack="true" PackagePath="\" />
+		<None Include="nuget\README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+	
 </Project>

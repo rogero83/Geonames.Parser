@@ -1,0 +1,1 @@
+# Geonames.Parser.Contract
