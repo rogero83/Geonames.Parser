@@ -7,19 +7,20 @@
 		<IsPackable>true</IsPackable>
 
 		<PackageId>R83.Geonames.Parser</PackageId>
-		<Version>0.1.0</Version>
+		<Version>0.2.0</Version>
 		<Authors>Ruggiero Centaro (aka Rogero83)</Authors>
 		<Description>Geonames parser implementaztion</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<RepositoryUrl>https://github.com/rogero83/Geonames.Parser</RepositoryUrl>
 		<PackageProjectUrl>https://github.com/rogero83/Geonames.Parser</PackageProjectUrl>
-		<PackageTags>dotnet;net8;net9;net10</PackageTags>
+		<PackageTags>geonames;countryinfo;alternatenamev2;admin1code;admin2code;dotnet;net8;net9;net10</PackageTags>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<PackageReleaseNotes>
 		</PackageReleaseNotes>
 
 		<PackageIcon>logo-128x128.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+
 	</PropertyGroup>
 
 	<ItemGroup>

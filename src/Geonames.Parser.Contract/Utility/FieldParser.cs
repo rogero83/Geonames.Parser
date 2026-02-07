@@ -2,8 +2,14 @@
 
 namespace Geonames.Parser.Contract.Utility;
 
+/// <summary>
+/// Field parser utility
+/// </summary>
 public static class FieldParser
 {
+    /// <summary>
+    /// Parse string input to DateOnly nullable
+    /// </summary>
     public static DateOnly? ParseDateOnly(string? input)
     {
         if (string.IsNullOrWhiteSpace(input))
@@ -25,6 +31,9 @@ public static class FieldParser
         return null;
     }
 
+    /// <summary>
+    /// Parse string input to enum nullable
+    /// </summary>
     public static TEnum? ParseEnum<TEnum>(string? input) where TEnum : struct, Enum
     {
         if (string.IsNullOrWhiteSpace(input))

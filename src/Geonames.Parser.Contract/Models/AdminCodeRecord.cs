@@ -1,8 +1,14 @@
 ﻿namespace Geonames.Parser.Contract.Models;
 
+/// <summary>
+/// Gets the second-level administrative division code associated with this record.
+/// </summary>
 public class Admin2CodeRecord : Admin1CodeRecord
 {
     private string? _admin2Code;
+    /// <summary>
+    /// Admin2Code
+    /// </summary>
     public string Admin2Code
     {
         get
@@ -17,9 +23,15 @@ public class Admin2CodeRecord : Admin1CodeRecord
     }
 }
 
+/// <summary>
+/// Gets the first-level administrative division code associated with this record.
+/// </summary>
 public class Admin1CodeRecord : AdminXCodeRecord
 {
     private string? _countryCode;
+    /// <summary>
+    /// Country Code ISO alpha-2
+    /// </summary>
     public string CountryCode
     {
         get
@@ -35,6 +47,9 @@ public class Admin1CodeRecord : AdminXCodeRecord
     }
 
     private string? _admin1Code;
+    /// <summary>
+    /// Admin1Code
+    /// </summary>
     public string Admin1Code
     {
         get
@@ -49,10 +64,25 @@ public class Admin1CodeRecord : AdminXCodeRecord
     }
 }
 
-public class AdminXCodeRecord
+/// <summary>
+/// The abstract class for generic administrative division code.
+/// </summary>
+public abstract class AdminXCodeRecord
 {
+    /// <summary>
+    /// Code
+    /// </summary>
     public string Code { get; set; } = null!;
+    /// <summary>
+    /// Name
+    /// </summary>
     public string Name { get; set; } = null!;
+    /// <summary>
+    /// Ascii Name
+    /// </summary>
     public string? NameAscii { get; set; }
+    /// <summary>
+    /// GeonameId
+    /// </summary>
     public int GeonameId { get; set; }
 }

@@ -1,5 +1,9 @@
 ﻿namespace Geonames.Parser.Contract.Models;
 
+/// <summary>
+/// AlternateNamesV2<br/>
+/// see: https://download.geonames.org/export/dump/
+/// </summary>
 public class AlternateNamesV2Record
 {
     /// <summary>

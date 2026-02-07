@@ -171,8 +171,8 @@ public class GeonamesParserAlternateNamesV2Tests
 
         var mockProcessor = new Mock<IDataProcessor>();
         var capturedBatch = new List<AlternateNamesV2Record>();
-        mockProcessor.Setup(x => x.ProcessAlternateNamesV2BatchAsync(It.IsAny<List<AlternateNamesV2Record>>(), ct))
-            .Callback((ICollection<AlternateNamesV2Record> b, CancellationToken ct) => capturedBatch.AddRange(b))
+        mockProcessor.Setup(x => x.ProcessAlternateNamesV2BatchAsync(It.IsAny<IEnumerable<AlternateNamesV2Record>>(), ct))
+            .Callback((IEnumerable<AlternateNamesV2Record> b, CancellationToken ct) => capturedBatch.AddRange(b))
             .ReturnsAsync((List<AlternateNamesV2Record> b, CancellationToken ct) => b.Count);
 
         var parser = new GeonamesParser(mockProcessor.Object);

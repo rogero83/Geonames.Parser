@@ -1,10 +1,16 @@
 ﻿namespace Geonames.Parser.Contract;
 
+/// <summary>
+/// Options for GeonamesParser
+/// </summary>
 public class GeonamesParserOptions
 {
+    /// <summary>
+    /// Default options for GeonamesParser
+    /// </summary>
     public static GeonamesParserOptions Default => new();
 
-    private int _defaultProcessingBatchSize;
+    private int _processingBatchSize;
     private const int DefaultProcessingBatchSize = 1000;
 
     /// <summary>
@@ -12,7 +18,7 @@ public class GeonamesParserOptions
     /// </summary>
     public int ProcessingBatchSize
     {
-        get => _defaultProcessingBatchSize;
-        init => _defaultProcessingBatchSize = value > 0 ? value : DefaultProcessingBatchSize;
+        get => _processingBatchSize;
+        init => _processingBatchSize = value > 0 ? value : DefaultProcessingBatchSize;
     }
 }

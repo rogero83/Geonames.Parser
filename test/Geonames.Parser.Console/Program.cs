@@ -3,7 +3,7 @@ using Geonames.Parser.Console;
 using Geonames.Parser.Contract.Models;
 using Geonames.Parser.Contract.Utility;
 
-Console.WriteLine("Hello, World!");
+Console.WriteLine("Geonames Test Console");
 
 var processor = new ConsoleDataProcessor();
 var parser = new GeonamesParser(processor);
@@ -36,10 +36,10 @@ while (true)
             var isoCode = Console.ReadLine();
             if (!string.IsNullOrWhiteSpace(isoCode) && isoCode.Length == 2)
             {
-                Func<AlternateNamesV2Record, bool> filters = (record) =>
+                static bool filters(AlternateNamesV2Record record)
                 {
                     return record.From.HasValue || record.To.HasValue;
-                };
+                }
 
                 result = await parser.ParseAlternateNamesV2DataAsync(isoCode, filters);
             }
