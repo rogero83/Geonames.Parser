@@ -11,6 +11,7 @@
     <Project Path="src/Geonames.Parser/Geonames.Parser.csproj" Id="02f030af-77c2-4b96-80ca-583bbb807a6c" />
   </Folder>
   <Folder Name="/Tests/">
+    <Project Path="test/Geonames.Parser.Benchmarks/Geonames.Parser.Benchmarks.csproj" />
     <Project Path="test/Geonames.Parser.Console/Geonames.Parser.Console.csproj" Id="1e6b5271-5cf4-4c0f-873a-2cff85c9a8e7" />
     <Project Path="test/Geonames.Parser.Tests/Geonames.Parser.Tests.csproj" />
   </Folder>

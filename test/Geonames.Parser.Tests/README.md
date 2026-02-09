@@ -46,6 +46,14 @@ Tests for `ParseAlternateNamesV2DataAsync` methods:
 - Invalid ISO code validation
 - Boolean flag parsing (preferred, short, historic names)
 
+### GeonamesParserTimeZoneTests.cs
+Tests for `ParseTimeZoneDataAsync` methods:
+- Valid time zone data parsing
+- Malformed row handling
+- Filtering by country code
+- Malformed rows with error handling
+- Comment and empty line skipping
+	
 ## Test Patterns
 
 All tests follow these patterns:

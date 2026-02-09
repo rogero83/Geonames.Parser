@@ -19,6 +19,10 @@ public class ParserResult
     /// </summary>
     public int RecordsAdded { get; set; }
     /// <summary>
+    /// Total record in file, included comments and excluded by filters, useful for logging and debugging purposes
+    /// </summary>
+    public int RecordsTotal { get; set; }
+    /// <summary>
     /// List of error messages encountered during parsing
     /// </summary>
     public ICollection<string> ErrorMessages { get; set; } = [];

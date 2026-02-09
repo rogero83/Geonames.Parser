@@ -8,10 +8,14 @@ public class GeonamesParserOptions
     /// <summary>
     /// Default options for GeonamesParser
     /// </summary>
-    public static GeonamesParserOptions Default => new();
+    public static GeonamesParserOptions Default => new()
+    {
+        ProcessingBatchSize = DefaultProcessingBatchSize
+    };
 
-    private int _processingBatchSize;
     private const int DefaultProcessingBatchSize = 1000;
+    private int _processingBatchSize;
+
 
     /// <summary>
     /// Dimensione del batch per l'elaborazione dei record
