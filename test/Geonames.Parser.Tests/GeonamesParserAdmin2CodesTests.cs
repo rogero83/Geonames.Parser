@@ -1,5 +1,4 @@
 using Geonames.Parser.Contract.Abstractions;
-using Geonames.Parser.Contract.Enums;
 using Geonames.Parser.Contract.Models;
 using Geonames.Parser.Tests.Utility;
 using Moq;
@@ -30,8 +29,8 @@ public class GeonamesParserAdmin2CodesTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessAdminCodeBatchAsync(It.IsAny<AdminLevel>(), It.IsAny<IEnumerable<AdminXCodeRecord>>(), ct))
-            .ReturnsAsync((AdminLevel level, IEnumerable<AdminXCodeRecord> batch, CancellationToken ct) => batch.Count());
+        mockProcessor.Setup(x => x.ProcessAdmin2CodeBatchAsync(It.IsAny<IEnumerable<Admin2CodeRecord>>(), ct))
+            .ReturnsAsync((IEnumerable<Admin2CodeRecord> batch, CancellationToken ct) => batch.Count());
 
         var parser = new GeonamesParser(mockProcessor.Object);
 
@@ -58,8 +57,8 @@ public class GeonamesParserAdmin2CodesTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessAdminCodeBatchAsync(It.IsAny<AdminLevel>(), It.IsAny<IEnumerable<AdminXCodeRecord>>(), ct))
-            .ReturnsAsync((AdminLevel level, IEnumerable<AdminXCodeRecord> batch, CancellationToken ct) => batch.Count());
+        mockProcessor.Setup(x => x.ProcessAdmin2CodeBatchAsync(It.IsAny<IEnumerable<Admin2CodeRecord>>(), ct))
+            .ReturnsAsync((IEnumerable<Admin2CodeRecord> batch, CancellationToken ct) => batch.Count());
 
         var parser = new GeonamesParser(mockProcessor.Object);
 
@@ -87,8 +86,8 @@ public class GeonamesParserAdmin2CodesTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessAdminCodeBatchAsync(It.IsAny<AdminLevel>(), It.IsAny<IEnumerable<AdminXCodeRecord>>(), ct))
-            .ReturnsAsync((AdminLevel level, IEnumerable<AdminXCodeRecord> batch, CancellationToken ct) => batch.Count());
+        mockProcessor.Setup(x => x.ProcessAdmin2CodeBatchAsync(It.IsAny<IEnumerable<Admin2CodeRecord>>(), ct))
+            .ReturnsAsync((IEnumerable<Admin2CodeRecord> batch, CancellationToken ct) => batch.Count());
 
         var parser = new GeonamesParser(mockProcessor.Object);
 

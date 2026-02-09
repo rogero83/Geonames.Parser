@@ -1,10 +1,12 @@
-﻿namespace Geonames.Parser.Contract.Models;
+﻿using Geonames.Parser.Contract.Abstractions;
+
+namespace Geonames.Parser.Contract.Models;
 
 /// <summary>
 /// Represents a single record from a CountryInfo data file.
 /// see: https://download.geonames.org/export/dump/countryInfo.txt
 /// </summary>
-public class CountryInfoRecord
+public class CountryInfoRecord : IGeonameRecord
 {
     /// <summary>
     /// Coutry ISO code

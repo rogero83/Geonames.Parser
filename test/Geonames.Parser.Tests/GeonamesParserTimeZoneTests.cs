@@ -26,7 +26,6 @@ public class GeonamesParserTimeZoneTests
         content.AppendLine("AE\tAsia/Dubai\t4.0\t4.0\t4.0");
 
         using var ms = new MemoryStream(Encoding.UTF8.GetBytes(content.ToString()));
-        using var reader = new StreamReader(ms);
 
         var mockProcessor = new Mock<IDataProcessor>();
         mockProcessor.Setup(x => x.ProcessTimeZoneBatchAsync(It.IsAny<IEnumerable<TimeZoneRecord>>(), ct))
@@ -35,7 +34,7 @@ public class GeonamesParserTimeZoneTests
         var parser = new GeonamesParser(mockProcessor.Object);
 
         // Act
-        var result = await parser.ParseTimeZoneDataAsync(reader, null, ct);
+        var result = await parser.ParseTimeZoneDataAsync(ms, null, ct);
 
         // Assert
         Assert.Equal(2, result.RecordsFound);
@@ -80,7 +79,6 @@ public class GeonamesParserTimeZoneTests
         content.AppendLine("AE\tAsia/Dubai\t4.0\t4.0\t4.0");
 
         using var ms = new MemoryStream(Encoding.UTF8.GetBytes(content.ToString()));
-        using var reader = new StreamReader(ms);
 
         var mockProcessor = new Mock<IDataProcessor>();
         mockProcessor.Setup(x => x.ProcessTimeZoneBatchAsync(It.IsAny<List<TimeZoneRecord>>(), ct))
@@ -89,7 +87,7 @@ public class GeonamesParserTimeZoneTests
         var parser = new GeonamesParser(mockProcessor.Object);
 
         // Act - only include AE records
-        var result = await parser.ParseTimeZoneDataAsync(reader, r => r.CountryCode == "AE", ct);
+        var result = await parser.ParseTimeZoneDataAsync(ms, r => r.CountryCode == "AE", ct);
 
         // Assert
         Assert.Equal(2, result.RecordsFound);
@@ -108,7 +106,6 @@ public class GeonamesParserTimeZoneTests
         content.AppendLine("AE\tAsia/Dubai\t4.0\t4.0\t4.0");
 
         using var ms = new MemoryStream(Encoding.UTF8.GetBytes(content.ToString()));
-        using var reader = new StreamReader(ms);
 
         var mockProcessor = new Mock<IDataProcessor>();
         mockProcessor.Setup(x => x.ProcessTimeZoneBatchAsync(It.IsAny<List<TimeZoneRecord>>(), ct))
@@ -117,7 +114,7 @@ public class GeonamesParserTimeZoneTests
         var parser = new GeonamesParser(mockProcessor.Object);
 
         // Act
-        var result = await parser.ParseTimeZoneDataAsync(reader, null, ct);
+        var result = await parser.ParseTimeZoneDataAsync(ms, null, ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound);
@@ -138,7 +135,6 @@ public class GeonamesParserTimeZoneTests
         content.AppendLine("AD\tEurope/Andorra\t1.0\t2.0\t1.0");
 
         using var ms = new MemoryStream(Encoding.UTF8.GetBytes(content.ToString()));
-        using var reader = new StreamReader(ms);
 
         var mockProcessor = new Mock<IDataProcessor>();
         mockProcessor.Setup(x => x.ProcessTimeZoneBatchAsync(It.IsAny<List<TimeZoneRecord>>(), ct))
@@ -147,7 +143,7 @@ public class GeonamesParserTimeZoneTests
         var parser = new GeonamesParser(mockProcessor.Object);
 
         // Act
-        var result = await parser.ParseTimeZoneDataAsync(reader, null, ct);
+        var result = await parser.ParseTimeZoneDataAsync(ms, null, ct);
 
         // Assert
         Assert.Equal(1, result.RecordsFound);

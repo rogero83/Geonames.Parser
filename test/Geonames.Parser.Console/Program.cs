@@ -6,7 +6,7 @@ using Geonames.Parser.Contract.Models;
 Console.WriteLine("Geonames Test Console");
 
 IDataProcessor processor = new ConsoleDataProcessor();
-IGeonamesParser parser = new GeonamesParser(processor);
+var parser = new GeonamesParser(processor);
 
 ParserResult? result = null;
 while (true)

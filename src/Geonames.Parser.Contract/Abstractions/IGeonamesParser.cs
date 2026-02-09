@@ -36,14 +36,14 @@ public interface IGeonamesParser
     /// <summary>
     /// Parses country information records from the provided stream.
     /// </summary>
-    /// <param name="reader">A StreamReader that supplies the input data to parse. The stream must be readable and positioned at the start of
+    /// <param name="stream">A Stream that supplies the input data to parse. The stream must be readable and positioned at the start of
     /// the data to be parsed.</param>
     /// <param name="filter">An optional predicate used to filter parsed CountryInfoRecord objects. Only records for which the predicate
     /// returns <see langword="true"/> are included in the result. If null, all records are included.</param>
     /// <param name="ct">A CancellationToken that can be used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous parse operation. The task result contains a ParserResult with the parsed
     /// and filtered country information records.</returns>
-    Task<ParserResult> ParseCountryInfoAsync(StreamReader reader, Func<CountryInfoRecord, bool>? filter = null, CancellationToken ct = default);
+    Task<ParserResult> ParseCountryInfoAsync(Stream stream, Func<CountryInfoRecord, bool>? filter = null, CancellationToken ct = default);
     #endregion Country Info Parser
 
     #region Admin Codes Parser
@@ -71,14 +71,14 @@ public interface IGeonamesParser
     /// <summary>
     /// Parses administrative level 1 records (provinces, states, etc.) from the provided stream.
     /// </summary>
-    /// <param name="reader">A StreamReader that supplies the input data to parse. The stream must be readable and positioned at the start of
+    /// <param name="stream">A Stream that supplies the input data to parse. The stream must be readable and positioned at the start of
     /// the data to be parsed.</param>
     /// <param name="filter">An optional predicate used to filter parsed records. Only records for which the predicate
     /// returns <see langword="true"/> are included in the result. If null, all records are included.</param>
     /// <param name="ct">A CancellationToken that can be used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous parse operation. The task result contains a <see cref="ParserResult"/> with the parsed
     /// and filtered administrative level 1 records.</returns>
-    Task<ParserResult> ParseAdmin1CodesAsync(StreamReader reader, Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default);
+    Task<ParserResult> ParseAdmin1CodesAsync(Stream stream, Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default);
 
     /// <summary>
     /// Parses administrative level 2 records (counties, districts, etc.) from a remote source.
@@ -104,14 +104,14 @@ public interface IGeonamesParser
     /// <summary>
     /// Parses administrative level 2 records (counties, districts, etc.) from the provided stream.
     /// </summary>
-    /// <param name="reader">A StreamReader that supplies the input data to parse. The stream must be readable and positioned at the start of
+    /// <param name="stream">A Stream that supplies the input data to parse. The stream must be readable and positioned at the start of
     /// the data to be parsed.</param>
     /// <param name="filter">An optional predicate used to filter parsed records. Only records for which the predicate
     /// returns <see langword="true"/> are included in the result. If null, all records are included.</param>
     /// <param name="ct">A CancellationToken that can be used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous parse operation. The task result contains a <see cref="ParserResult"/> with the parsed
     /// and filtered administrative level 2 records.</returns>
-    Task<ParserResult> ParseAdmin2CodesAsync(StreamReader reader, Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default);
+    Task<ParserResult> ParseAdmin2CodesAsync(Stream stream, Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default);
     #endregion Admin Codes Parser
 
     #region Geonames Parser
@@ -141,14 +141,14 @@ public interface IGeonamesParser
     /// <summary>
     /// Parses GeoNames records from the provided stream.
     /// </summary>
-    /// <param name="reader">A StreamReader that supplies the input data to parse. The stream must be readable and positioned at the start of
+    /// <param name="stream">A Stream that supplies the input data to parse. The stream must be readable and positioned at the start of
     /// the data to be parsed.</param>
     /// <param name="filter">An optional predicate used to filter parsed records. Only records for which the predicate
     /// returns <see langword="true"/> are included in the result. If null, all records are included.</param>
     /// <param name="ct">A CancellationToken that can be used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous parse operation. The task result contains a <see cref="ParserResult"/> with the parsed
     /// and filtered GeoNames records.</returns>
-    Task<ParserResult> ParseGeoNamesDataAsync(Stream reader, Func<GeonameRecord, bool>? filter = null, CancellationToken ct = default);
+    Task<ParserResult> ParseGeoNamesDataAsync(Stream stream, Func<GeonameRecord, bool>? filter = null, CancellationToken ct = default);
     #endregion Geonames Parser
 
     #region AlternateNamesV2 Parser
@@ -177,13 +177,13 @@ public interface IGeonamesParser
     /// <summary>
     /// Parses alternate names V2 records from the provided stream.
     /// </summary>
-    /// <param name="reader">A StreamReader that supplies the input data to parse. The stream must be readable and positioned at the start of
+    /// <param name="stream">A Stream that supplies the input data to parse. The stream must be readable and positioned at the start of
     /// the data to be parsed.</param>
     /// <param name="filter">An optional predicate used to filter parsed records. Only records for which the predicate
     /// returns <see langword="true"/> are included in the result. If null, all records are included.</param>
     /// <param name="ct">A CancellationToken that can be used to cancel the asynchronous operation.</param>
     /// <returns>The task result contains a <see cref="ParserResult"/> with the filtered time zone records.</returns>
-    Task<ParserResult> ParseAlternateNamesV2DataAsync(StreamReader reader, Func<AlternateNamesV2Record, bool>? filter = null, CancellationToken ct = default);
+    Task<ParserResult> ParseAlternateNamesV2DataAsync(Stream stream, Func<AlternateNamesV2Record, bool>? filter = null, CancellationToken ct = default);
     #endregion AlternateNamesV2 Parser
 
     #region TimeZone Parser
@@ -209,12 +209,12 @@ public interface IGeonamesParser
     /// <summary>
     /// Parses time zone records from the provided stream.
     /// </summary>
-    /// <param name="reader">A StreamReader that supplies the input data to parse. The stream must be readable and positioned at the start of
+    /// <param name="stream">A Stream that supplies the input data to parse. The stream must be readable and positioned at the start of
     /// the data to be parsed.</param>
     /// <param name="filter">An optional predicate used to filter parsed records. Only records for which the predicate
     /// returns <see langword="true"/> are included in the result. If null, all records are included.</param>
     /// <param name="ct">A CancellationToken that can be used to cancel the asynchronous operation.</param>
     /// <returns>The task result contains a <see cref="ParserResult"/> with the filtered time zone records.</returns>
-    Task<ParserResult> ParseTimeZoneDataAsync(StreamReader reader, Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default);
+    Task<ParserResult> ParseTimeZoneDataAsync(Stream stream, Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default);
     #endregion TimeZone Parser
 }

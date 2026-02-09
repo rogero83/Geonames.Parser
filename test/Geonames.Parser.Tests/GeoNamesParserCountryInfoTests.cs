@@ -139,7 +139,6 @@ public class GeoNamesParserCountryInfoTests
         content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t9629091\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\t");
 
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content.ToString()));
-        using var reader = new StreamReader(stream);
 
         var mockProcessor = new Mock<IDataProcessor>();
         mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<IEnumerable<CountryInfoRecord>>(), ct))
@@ -148,7 +147,7 @@ public class GeoNamesParserCountryInfoTests
         var parser = new GeonamesParser(mockProcessor.Object);
 
         // Act
-        var result = await parser.ParseCountryInfoAsync(reader, null, ct);
+        var result = await parser.ParseCountryInfoAsync(stream, null, ct);
 
         // Assert
         Assert.Equal(1, result.RecordsFound);

@@ -1,5 +1,4 @@
 ﻿using Geonames.Parser.Contract.Abstractions;
-using Geonames.Parser.Contract.Enums;
 using Geonames.Parser.Contract.Models;
 
 namespace Geonames.Parser.Console;
@@ -20,35 +19,22 @@ internal class ConsoleDataProcessor : IDataProcessor
         return rowNumber;
     }
 
-    public async Task<int> ProcessAdminCodeBatchAsync(AdminLevel level, IEnumerable<AdminXCodeRecord> batch, CancellationToken ct = default)
+    public async Task<int> ProcessAdmin1CodeBatchAsync(IEnumerable<Admin1CodeRecord> batch, CancellationToken ct = default)
     {
         var rowNumber = 0;
         foreach (var record in batch)
         {
-            if (level == AdminLevel.Admin1)
-            {
-                if (record is Admin1CodeRecord admin1)
-                {
-                    System.Console.WriteLine($"{++rowNumber} AdminLevel: {level}, CountryCode: {admin1.CountryCode}, Admin1: {admin1.Admin1Code}, Name: {admin1.Name}, NameAscii: {admin1.NameAscii}, GeonameId: {admin1.GeonameId}");
-                }
-                else
-                {
-                    throw new InvalidCastException($"Expected Admin1CodeRecord but got {record.GetType().Name}");
-                }
-                continue;
-            }
-            if (level == AdminLevel.Admin2)
-            {
-                if (record is Admin2CodeRecord admin2)
-                {
-                    System.Console.WriteLine($"{++rowNumber} AdminLevel: {level}, CountryCode: {admin2.CountryCode}, Admin1: {admin2.Admin1Code}, Admin2: {admin2.Admin2Code}, Name: {admin2.Name}, NameAscii: {admin2.NameAscii}, GeonameId: {admin2.GeonameId}");
-                }
-                else
-                {
-                    throw new InvalidCastException($"Expected Admin1CodeRecord but got {record.GetType().Name}");
-                }
-                continue;
-            }
+            System.Console.WriteLine($"{++rowNumber} CountryCode: {record.CountryCode}, Admin1: {record.Admin1Code}, Name: {record.Name}, NameAscii: {record.NameAscii}, GeonameId: {record.GeonameId}");
+        }
+        return batch.Count();
+    }
+
+    public async Task<int> ProcessAdmin2CodeBatchAsync(IEnumerable<Admin2CodeRecord> batch, CancellationToken ct = default)
+    {
+        var rowNumber = 0;
+        foreach (var record in batch)
+        {
+            System.Console.WriteLine($"{++rowNumber} CountryCode: {record.CountryCode}, Admin1: {record.Admin1Code}, Admin2: {record.Admin2Code}, Name: {record.Name}, NameAscii: {record.NameAscii}, GeonameId: {record.GeonameId}");
         }
         return batch.Count();
     }

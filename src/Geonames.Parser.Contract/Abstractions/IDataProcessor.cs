@@ -1,5 +1,4 @@
-﻿using Geonames.Parser.Contract.Enums;
-using Geonames.Parser.Contract.Models;
+﻿using Geonames.Parser.Contract.Models;
 
 namespace Geonames.Parser.Contract.Abstractions;
 
@@ -12,13 +11,12 @@ namespace Geonames.Parser.Contract.Abstractions;
 /// efficiently.</remarks>
 public interface IDataProcessor
 {
+#pragma warning disable CS1591
     Task<int> ProcessCountryInfoBatchAsync(IEnumerable<CountryInfoRecord> reader, CancellationToken ct = default);
-
-    Task<int> ProcessAdminCodeBatchAsync(AdminLevel level, IEnumerable<AdminXCodeRecord> batch, CancellationToken ct = default);
-
+    Task<int> ProcessAdmin1CodeBatchAsync(IEnumerable<Admin1CodeRecord> batch, CancellationToken ct = default);
+    Task<int> ProcessAdmin2CodeBatchAsync(IEnumerable<Admin2CodeRecord> batch, CancellationToken ct = default);
     Task<int> ProcessGeoNameBatchAsync(IEnumerable<GeonameRecord> batch, CancellationToken ct = default);
-
     Task<int> ProcessAlternateNamesV2BatchAsync(IEnumerable<AlternateNamesV2Record> batch, CancellationToken ct = default);
-
     Task<int> ProcessTimeZoneBatchAsync(IEnumerable<TimeZoneRecord> batch, CancellationToken ct = default);
+#pragma warning restore CS1591
 }

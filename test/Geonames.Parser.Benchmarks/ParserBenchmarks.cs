@@ -1,13 +1,12 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using Geonames.Parser.Contract.Abstractions;
-using Geonames.Parser.Contract.Enums;
 using Geonames.Parser.Contract.Models;
 
 namespace Geonames.Parser.Benchmarks;
 
-//[SimpleJob(RuntimeMoniker.Net80)]
-//[SimpleJob(RuntimeMoniker.Net90)]
+[SimpleJob(RuntimeMoniker.Net80)]
+[SimpleJob(RuntimeMoniker.Net90)]
 [SimpleJob(RuntimeMoniker.Net10_0)]
 [MemoryDiagnoser]
 public class ParserBenchmarks
@@ -15,7 +14,8 @@ public class ParserBenchmarks
     private class NoOpDataProcessor : IDataProcessor
     {
         public Task<int> ProcessCountryInfoBatchAsync(IEnumerable<CountryInfoRecord> batch, CancellationToken ct = default) => Task.FromResult(batch.Count());
-        public Task<int> ProcessAdminCodeBatchAsync(AdminLevel level, IEnumerable<AdminXCodeRecord> batch, CancellationToken ct = default) => Task.FromResult(batch.Count());
+        public Task<int> ProcessAdmin1CodeBatchAsync(IEnumerable<Admin1CodeRecord> batch, CancellationToken ct = default) => Task.FromResult(batch.Count());
+        public Task<int> ProcessAdmin2CodeBatchAsync(IEnumerable<Admin2CodeRecord> batch, CancellationToken ct = default) => Task.FromResult(batch.Count());
         public Task<int> ProcessGeoNameBatchAsync(IEnumerable<GeonameRecord> batch, CancellationToken ct = default) => Task.FromResult(batch.Count());
         public Task<int> ProcessAlternateNamesV2BatchAsync(IEnumerable<AlternateNamesV2Record> batch, CancellationToken ct = default) => Task.FromResult(batch.Count());
         public Task<int> ProcessTimeZoneBatchAsync(IEnumerable<TimeZoneRecord> batch, CancellationToken ct = default) => Task.FromResult(batch.Count());
@@ -46,14 +46,14 @@ public class ParserBenchmarks
     [Benchmark]
     public async Task ParseCountryInfo()
     {
-        using var reader = new StreamReader(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(_countryInfoContent)));
+        using var reader = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(_countryInfoContent));
         await _parser.ParseCountryInfoAsync(reader);
     }
 
     [Benchmark]
     public async Task ParseAdmin1Codes()
     {
-        using var reader = new StreamReader(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(_admin1CodesContent)));
+        using var reader = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(_admin1CodesContent));
         await _parser.ParseAdmin1CodesAsync(reader);
     }
 

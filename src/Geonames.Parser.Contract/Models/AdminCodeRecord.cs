@@ -1,4 +1,6 @@
-﻿namespace Geonames.Parser.Contract.Models;
+﻿using Geonames.Parser.Contract.Abstractions;
+
+namespace Geonames.Parser.Contract.Models;
 
 /// <summary>
 /// Gets the second-level administrative division code associated with this record.
@@ -67,7 +69,7 @@ public class Admin1CodeRecord : AdminXCodeRecord
 /// <summary>
 /// The abstract class for generic administrative division code.
 /// </summary>
-public abstract class AdminXCodeRecord
+public abstract class AdminXCodeRecord : IGeonameRecord
 {
     /// <summary>
     /// Code

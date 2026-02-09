@@ -1,10 +1,12 @@
-﻿namespace Geonames.Parser.Contract.Models;
+﻿using Geonames.Parser.Contract.Abstractions;
+
+namespace Geonames.Parser.Contract.Models;
 
 /// <summary>
 /// AlternateNamesV2<br/>
 /// see: https://download.geonames.org/export/dump/
 /// </summary>
-public class AlternateNamesV2Record
+public class AlternateNamesV2Record : IGeonameRecord
 {
     /// <summary>
     /// alternateNameId : the id of this alternate name, int

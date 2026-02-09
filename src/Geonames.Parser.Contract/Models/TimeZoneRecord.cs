@@ -1,9 +1,11 @@
-﻿namespace Geonames.Parser.Contract.Models;
+﻿using Geonames.Parser.Contract.Abstractions;
+
+namespace Geonames.Parser.Contract.Models;
 
 /// <summary>
 /// Time zone record representing the time zone information for a specific country.
 /// </summary>
-public class TimeZoneRecord
+public class TimeZoneRecord : IGeonameRecord
 {
     /// <summary>
     /// Country code ISO-3166 2-letter
