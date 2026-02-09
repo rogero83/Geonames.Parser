@@ -34,22 +34,15 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
     }
 
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseCountryInfoAsync(Stream stream,
+    public Task<ParserResult> ParseCountryInfoAsync(Stream stream,
         Func<CountryInfoRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        var result = new ParserResult();
-        var batch = new List<CountryInfoRecord>(_options.ProcessingBatchSize);
-
-        await ParseStream(
+        return ParseStream(
             stream,
             RowParser.CountryInfo,
             _dataProcessor.ProcessCountryInfoBatchAsync,
             filter,
-            result,
-            batch,
             ct);
-
-        return result;
     }
     #endregion Country Info Parser
 
@@ -69,21 +62,14 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
     }
 
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseAdmin1CodesAsync(Stream stream, Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParseAdmin1CodesAsync(Stream stream, Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        var result = new ParserResult();
-        var batch = new List<Admin1CodeRecord>(_options.ProcessingBatchSize);
-
-        await ParseStream(
+        return ParseStream(
             stream,
             RowParser.Admin1Code,
             _dataProcessor.ProcessAdmin1CodeBatchAsync,
             filter,
-            result,
-            batch,
             ct);
-
-        return result;
     }
 
     /// <inheritdoc/>
@@ -101,21 +87,14 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
     }
 
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseAdmin2CodesAsync(Stream stream, Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParseAdmin2CodesAsync(Stream stream, Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        var result = new ParserResult();
-        var batch = new List<Admin2CodeRecord>(_options.ProcessingBatchSize);
-
-        await ParseStream(
+        return ParseStream(
             stream,
             RowParser.Admin2Code,
             _dataProcessor.ProcessAdmin2CodeBatchAsync,
             filter,
-            result,
-            batch,
             ct);
-
-        return result;
     }
     #endregion Admin Codes Parser
 
@@ -152,23 +131,16 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
     }
 
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseGeoNamesDataAsync(Stream stream,
+    public Task<ParserResult> ParseGeoNamesDataAsync(Stream stream,
         Func<GeonameRecord, bool>? filter = null,
         CancellationToken ct = default)
     {
-        var result = new ParserResult();
-        var batch = new List<GeonameRecord>(_options.ProcessingBatchSize);
-
-        await ParseStream(
+        return ParseStream(
             stream,
             RowParser.Geonames,
             _dataProcessor.ProcessGeoNameBatchAsync,
             filter,
-            result,
-            batch,
             ct);
-
-        return result;
     }
     #endregion Geonames Parser
 
@@ -207,23 +179,16 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
     }
 
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseAlternateNamesV2DataAsync(Stream stream,
+    public Task<ParserResult> ParseAlternateNamesV2DataAsync(Stream stream,
         Func<AlternateNamesV2Record, bool>? filter = null,
         CancellationToken ct = default)
     {
-        var result = new ParserResult();
-        var batch = new List<AlternateNamesV2Record>(_options.ProcessingBatchSize);
-
-        await ParseStream(
+        return ParseStream(
             stream,
             RowParser.AlternateNameV2,
             _dataProcessor.ProcessAlternateNamesV2BatchAsync,
             filter,
-            result,
-            batch,
             ct);
-
-        return result;
     }
     #endregion AlternaticeNamveV2 Parser
 
@@ -244,36 +209,30 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
     }
 
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseTimeZoneDataAsync(Stream reader, Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParseTimeZoneDataAsync(Stream reader, Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        var result = new ParserResult();
-        var batch = new List<TimeZoneRecord>(_options.ProcessingBatchSize);
-
-        await ParseStream(
+        return ParseStream(
             reader,
             RowParser.TimeZone,
             _dataProcessor.ProcessTimeZoneBatchAsync,
             filter,
-            result,
-            batch,
             ct);
-
-        return result;
     }
     #endregion TimeZone Parser
 
     #region private helper methods
     private delegate TRecord? RowParserDelegate<TRecord>(ReadOnlySpan<char> span, ref ParserResult result);
 
-    private async Task ParseStream<TRecord>(
+    private async Task<ParserResult> ParseStream<TRecord>(
         Stream reader,
         RowParserDelegate<TRecord> rowParser,
         Func<List<TRecord>, CancellationToken, Task<int>> batchProcessor,
         Func<TRecord, bool>? filter,
-        ParserResult result,
-        List<TRecord> batch,
         CancellationToken ct) where TRecord : class, IGeonameRecord
     {
+        var result = new ParserResult();
+        var batch = new List<TRecord>(_options.ProcessingBatchSize);
+
         var pipeReader = PipeReader.Create(reader, new StreamPipeReaderOptions(
             bufferSize: 131072,      // 128 KB
             minimumReadSize: 65536,  // 64 KB
@@ -313,6 +272,8 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
         {
             await pipeReader.CompleteAsync();
         }
+
+        return result;
     }
 
     private async Task ProcessLine<TRecord>(
