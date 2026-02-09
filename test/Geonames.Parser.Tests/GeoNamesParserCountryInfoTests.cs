@@ -24,15 +24,14 @@ public class GeoNamesParserCountryInfoTests
         // Arrange
         var content = new StringBuilder();
         content.AppendLine("# comment");
-        content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\t");
-        content.AppendLine("CA\tCAN\t124\tCA\tCanada\tOttawa\t38005238\tNA\t.ca\tCAD\tCanadian Dollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-CA,fr-CA\t6251999\tUS\t");
-
+        content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t9629091\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\tEquivalentFipsCode");
+        content.AppendLine("CA\tCAN\t124\tCA\tCanada\tOttawa\t9629091\t38005238\tNA\t.ca\tCAD\tCanadian Dollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-CA,fr-CA\t6251999\tUS\t");
         var httpContent = new StringContent(content.ToString(), Encoding.UTF8, "text/plain");
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<ICollection<CountryInfoRecord>>(), ct))
-            .ReturnsAsync((ICollection<CountryInfoRecord> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<IEnumerable<CountryInfoRecord>>(), ct))
+            .ReturnsAsync((IEnumerable<CountryInfoRecord> b, CancellationToken ct) => b.Count(x => x != null));
 
         var parser = new GeonamesParser(mockProcessor.Object);
 
@@ -52,16 +51,16 @@ public class GeoNamesParserCountryInfoTests
         // Arrange
         var content = new StringBuilder();
         content.AppendLine("# header");
-        content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\t");
+        content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t9629091\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\t");
         content.AppendLine("MALFORMED_LINE_WITH_FEW_FIELDS");
-        content.AppendLine("CA\tCAN\t124\tCA\tCanada\tOttawa\t38005238\tNA\t.ca\tCAD\tCanadian Dollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-CA,fr-CA\t6251999\tUS\t");
+        content.AppendLine("CA\tCAN\t124\tCA\tCanada\tOttawa\t9629091\t38005238\tNA\t.ca\tCAD\tCanadian Dollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-CA,fr-CA\t6251999\tUS\t");
 
         var httpContent = new StringContent(content.ToString(), Encoding.UTF8, "text/plain");
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<ICollection<CountryInfoRecord>>(), ct))
-            .ReturnsAsync((ICollection<CountryInfoRecord> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<IEnumerable<CountryInfoRecord>>(), ct))
+            .ReturnsAsync((IEnumerable<CountryInfoRecord> b, CancellationToken ct) => b.Count(x => x != null));
 
         var parser = new GeonamesParser(mockProcessor.Object);
 
@@ -81,16 +80,16 @@ public class GeoNamesParserCountryInfoTests
     {
         // Arrange
         var content = new StringBuilder();
-        content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\t");
-        content.AppendLine("CA\tCAN\t124\tCA\tCanada\tOttawa\t38005238\tNA\t.ca\tCAD\tCanadian Dollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-CA,fr-CA\t6251999\tUS\t");
-        content.AppendLine("MX\tMEX\t484\tMX\tMexico\tMexico City\t128932753\tNA\t.mx\tMXN\tMexican Peso\t52\t#####\t\\d{5}\tes-MX\t3996063\tUS,GT,BZ\t");
+        content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t9629091\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\t");
+        content.AppendLine("CA\tCAN\t124\tCA\tCanada\tOttawa\t9629091\t38005238\tNA\t.ca\tCAD\tCanadian Dollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-CA,fr-CA\t6251999\tUS\t");
+        content.AppendLine("MX\tMEX\t484\tMX\tMexico\tMexico City\t9629091\t128932753\tNA\t.mx\tMXN\tMexican Peso\t52\t#####\t\\d{5}\tes-MX\t3996063\tUS,GT,BZ\t");
 
         var httpContent = new StringContent(content.ToString(), Encoding.UTF8, "text/plain");
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<ICollection<CountryInfoRecord>>(), ct))
-            .ReturnsAsync((ICollection<CountryInfoRecord> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<IEnumerable<CountryInfoRecord>>(), ct))
+            .ReturnsAsync((IEnumerable<CountryInfoRecord> b, CancellationToken ct) => b.Count(x => x != null));
 
         var parser = new GeonamesParser(mockProcessor.Object);
 
@@ -110,15 +109,15 @@ public class GeoNamesParserCountryInfoTests
         var content = new StringBuilder();
         content.AppendLine("# This is a comment");
         content.AppendLine("");
-        content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\t");
+        content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t9629091\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\t");
         content.AppendLine("   ");
 
         var httpContent = new StringContent(content.ToString(), Encoding.UTF8, "text/plain");
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<ICollection<CountryInfoRecord>>(), ct))
-            .ReturnsAsync((ICollection<CountryInfoRecord> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<IEnumerable<CountryInfoRecord>>(), ct))
+            .ReturnsAsync((IEnumerable<CountryInfoRecord> b, CancellationToken ct) => b.Count(x => x != null));
 
         var parser = new GeonamesParser(mockProcessor.Object);
 
@@ -137,19 +136,18 @@ public class GeoNamesParserCountryInfoTests
     {
         // Arrange
         var content = new StringBuilder();
-        content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\t");
+        content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t9629091\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\t");
 
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content.ToString()));
-        using var reader = new StreamReader(stream);
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<ICollection<CountryInfoRecord>>(), ct))
-            .ReturnsAsync((ICollection<CountryInfoRecord> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<IEnumerable<CountryInfoRecord>>(), ct))
+            .ReturnsAsync((IEnumerable<CountryInfoRecord> b, CancellationToken ct) => b.Count(x => x != null));
 
         var parser = new GeonamesParser(mockProcessor.Object);
 
         // Act
-        var result = await parser.ParseCountryInfoAsync(reader, null, ct);
+        var result = await parser.ParseCountryInfoAsync(stream, null, ct);
 
         // Assert
         Assert.Equal(1, result.RecordsFound);
@@ -164,18 +162,18 @@ public class GeoNamesParserCountryInfoTests
         // Arrange
         var settings = new GeonamesParserOptions { ProcessingBatchSize = 2 };
         var content = new StringBuilder();
-        content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\t");
-        content.AppendLine("CA\tCAN\t124\tCA\tCanada\tOttawa\t38005238\tNA\t.ca\tCAD\tCanadian Dollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-CA,fr-CA\t6251999\tUS\t");
-        content.AppendLine("MX\tMEX\t484\tMX\tMexico\tMexico City\t128932753\tNA\t.mx\tMXN\tMexican Peso\t52\t#####\t\\d{5}\tes-MX\t3996063\tUS,GT,BZ\t");
+        content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t9629091\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\t");
+        content.AppendLine("CA\tCAN\t124\tCA\tCanada\tOttawa\t9629091\t38005238\tNA\t.ca\tCAD\tCanadian Dollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-CA,fr-CA\t6251999\tUS\t");
+        content.AppendLine("MX\tMEX\t484\tMX\tMexico\tMexico City\t9629091\t128932753\tNA\t.mx\tMXN\tMexican Peso\t52\t#####\t\\d{5}\tes-MX\t3996063\tUS,GT,BZ\t");
 
         var httpContent = new StringContent(content.ToString(), Encoding.UTF8, "text/plain");
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var batchCallCount = 0;
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<ICollection<CountryInfoRecord>>(), ct))
-            .Callback((ICollection<CountryInfoRecord> reader, CancellationToken ct) => batchCallCount++)
-            .ReturnsAsync((ICollection<CountryInfoRecord> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<IEnumerable<CountryInfoRecord>>(), ct))
+            .Callback((IEnumerable<CountryInfoRecord> reader, CancellationToken ct) => batchCallCount++)
+            .ReturnsAsync((IEnumerable<CountryInfoRecord> b, CancellationToken ct) => b.Count(x => x != null));
 
         var parser = new GeonamesParser(mockProcessor.Object, settings);
 

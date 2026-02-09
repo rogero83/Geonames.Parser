@@ -1,384 +1,170 @@
 ﻿using Geonames.Parser.Contract;
 using Geonames.Parser.Contract.Abstractions;
-using Geonames.Parser.Contract.Enums;
 using Geonames.Parser.Contract.Models;
 using Geonames.Parser.Contract.Utility;
-using System.Globalization;
+using Geonames.Parser.RowParsers;
+using System.Buffers;
 using System.IO.Compression;
+using System.IO.Pipelines;
+using System.Text;
 
 namespace Geonames.Parser;
 
-public class GeonamesParser : IGeonamesParser
+/// <inheritdoc/>
+public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions? options = null)
+    : IGeonamesParser
 {
-    private readonly IDataProcessor _dataProcessor;
-    private readonly GeonamesParserOptions _options;
-
-    public GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions? options = null)
-    {
-        _dataProcessor = dataProcessor;
-        _options = options ?? GeonamesParserOptions.Default;
-    }
+    private readonly IDataProcessor _dataProcessor = dataProcessor;
+    private readonly GeonamesParserOptions _options = options ?? GeonamesParserOptions.Default;
 
     #region Country Info Parser
+    /// <inheritdoc/>
     public async Task<ParserResult> ParseCountryInfoAsync(Func<CountryInfoRecord, bool>? filter = null, CancellationToken ct = default)
     {
         return await ParseCountryInfoAsync(new HttpClient(), filter, ct);
     }
 
+    /// <inheritdoc/>
     public async Task<ParserResult> ParseCountryInfoAsync(HttpClient systemHttpClient,
         Func<CountryInfoRecord, bool>? filter = null, CancellationToken ct = default)
     {
         using var httpClient = systemHttpClient;
-
         using var stream = await httpClient.GetStreamAsync(GeonamesUri.CountryInfoUrl, ct);
-
-        using var reader = new StreamReader(stream);
-
-        return await ParseCountryInfoAsync(reader, filter, ct);
+        return await ParseCountryInfoAsync(stream, filter, ct);
     }
 
-    public async Task<ParserResult> ParseCountryInfoAsync(StreamReader reader,
+    /// <inheritdoc/>
+    public Task<ParserResult> ParseCountryInfoAsync(Stream stream,
         Func<CountryInfoRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        var result = new ParserResult();
-        var totalRecords = 0;
-        var rowNumber = 0;
-        var batch = new List<CountryInfoRecord>(_options.ProcessingBatchSize);
-        string? line;
-        while ((line = await reader.ReadLineAsync(ct)) != null)
-        {
-            rowNumber++;
-            if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
-            {
-                continue; // Skip empty or commented lines
-            }
-            totalRecords++;
-            var fields = line.Split('\t');
-            if (fields.Length < 18)
-            {
-                result.ErrorMessages.Add($"Skipping malformed row: {rowNumber} line: {line}");
-                continue; // Not enough fields
-            }
-
-            var record = new CountryInfoRecord
-            {
-                ISO = fields[0],
-                ISO3 = fields[1],
-                ISO_Numeric = fields[2],
-                Fips = fields[3],
-                Country = fields[4],
-                Capital = fields[5],
-                Population = fields[6],
-                Continent = fields[7],
-                Tld = fields[8],
-                CurrencyCode = fields[9],
-                CurrencyName = fields[10],
-                Phone = fields[11],
-                Postal_Code_Format = fields[12],
-                Postal_Code_Regex = fields[13],
-                Languages = fields[14],
-                GeonameId = fields[15],
-                Neighbours = fields[16],
-                EquivalentFipsCode = fields[17]
-            };
-
-            if (filter == null || filter(record))
-            {
-                batch.Add(record);
-            }
-
-            if (batch.Count >= _options.ProcessingBatchSize)
-            {
-                await ProcessCountryInfo(result, batch, ct);
-            }
-        }
-
-        if (batch.Count > 0)
-        {
-            await ProcessCountryInfo(result, batch, ct);
-        }
-
-        result.RecordsFound = totalRecords;
-
-        return result;
-    }
-
-    private async Task ProcessCountryInfo(ParserResult result, List<CountryInfoRecord> batch, CancellationToken ct)
-    {
-        var added = await _dataProcessor.ProcessCountryInfoBatchAsync(batch, ct);
-        result.RecordsProcessed += batch.Count;
-        result.RecordsAdded += added;
-        batch.Clear();
+        return ParseStream(
+            stream,
+            RowParser.CountryInfo,
+            _dataProcessor.ProcessCountryInfoBatchAsync,
+            filter,
+            ct);
     }
     #endregion Country Info Parser
 
     #region Admin Codes Parser
+    /// <inheritdoc/>
     public Task<ParserResult> ParseAdmin1CodesAsync(Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
         return ParseAdmin1CodesAsync(new HttpClient(), filter, ct);
     }
 
+    /// <inheritdoc/>
     public async Task<ParserResult> ParseAdmin1CodesAsync(HttpClient systemHttpClient, Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
         using var httpClient = systemHttpClient;
         using var stream = await httpClient.GetStreamAsync(GeonamesUri.Admin1CodesUrl, ct);
-        using var reader = new StreamReader(stream);
-        return await ParseAdmin1CodesAsync(reader, filter, ct);
+        return await ParseAdmin1CodesAsync(stream, filter, ct);
     }
 
-    public async Task<ParserResult> ParseAdmin1CodesAsync(StreamReader reader, Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default)
+    /// <inheritdoc/>
+    public Task<ParserResult> ParseAdmin1CodesAsync(Stream stream, Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        var result = new ParserResult();
-        var totalRecords = 0;
-        var rowNumber = 0;
-        var batch = new List<Admin1CodeRecord>(_options.ProcessingBatchSize);
-        string? line;
-        while ((line = await reader.ReadLineAsync(ct)) != null)
-        {
-            rowNumber++;
-            if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#'))
-            {
-                continue; // Skip empty or commented lines
-            }
-            totalRecords++;
-            var fields = line.Split('\t');
-            if (fields.Length < 4)
-            {
-                result.ErrorMessages.Add($"Skipping malformed row: {rowNumber} line: {line}");
-                continue; // Not enough fields
-            }
-
-            var record = new Admin1CodeRecord
-            {
-                Code = fields[0],
-                Name = fields[1],
-                NameAscii = fields[2],
-                GeonameId = int.Parse(fields[3], CultureInfo.InvariantCulture)
-            };
-            if (filter == null || filter(record))
-            {
-                batch.Add(record);
-            }
-            if (batch.Count >= _options.ProcessingBatchSize)
-            {
-                await ProcessAdminCodesAsync(AdminLevel.Admin1, result, batch, ct);
-                batch.Clear();
-            }
-        }
-        if (batch.Count > 0)
-        {
-            await ProcessAdminCodesAsync(AdminLevel.Admin1, result, batch, ct);
-            batch.Clear();
-        }
-        result.RecordsFound = totalRecords;
-        return result;
+        return ParseStream(
+            stream,
+            RowParser.Admin1Code,
+            _dataProcessor.ProcessAdmin1CodeBatchAsync,
+            filter,
+            ct);
     }
 
+    /// <inheritdoc/>
     public Task<ParserResult> ParseAdmin2CodesAsync(Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
         return ParseAdmin2CodesAsync(new HttpClient(), filter, ct);
     }
 
+    /// <inheritdoc/>
     public async Task<ParserResult> ParseAdmin2CodesAsync(HttpClient systemHttpClient, Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
         using var httpClient = systemHttpClient;
         using var stream = await httpClient.GetStreamAsync(GeonamesUri.Admin2CodesUrl, ct);
-        using var reader = new StreamReader(stream);
-        return await ParseAdmin2CodesAsync(reader, filter, ct);
+        return await ParseAdmin2CodesAsync(stream, filter, ct);
     }
 
-    public async Task<ParserResult> ParseAdmin2CodesAsync(StreamReader reader, Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default)
+    /// <inheritdoc/>
+    public Task<ParserResult> ParseAdmin2CodesAsync(Stream stream, Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        var result = new ParserResult();
-        var totalRecords = 0;
-        var rowNumber = 0;
-        var batch = new List<AdminXCodeRecord>(_options.ProcessingBatchSize);
-        string? line;
-        while ((line = await reader.ReadLineAsync(ct)) != null)
-        {
-            rowNumber++;
-            if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#'))
-            {
-                continue; // Skip empty or commented lines
-            }
-            totalRecords++;
-            var fields = line.Split('\t');
-            if (fields.Length < 4)
-            {
-                result.ErrorMessages.Add($"Skipping malformed row: {rowNumber} line: {line}");
-                continue; // Not enough fields
-            }
-
-            var record = new Admin2CodeRecord
-            {
-                Code = fields[0],
-                Name = fields[1],
-                NameAscii = fields[2],
-                GeonameId = int.Parse(fields[3], CultureInfo.InvariantCulture)
-            };
-            if (filter == null || filter(record))
-            {
-                batch.Add(record);
-            }
-            if (batch.Count >= _options.ProcessingBatchSize)
-            {
-                await ProcessAdminCodesAsync(AdminLevel.Admin2, result, batch, ct);
-                batch.Clear();
-            }
-        }
-        if (batch.Count > 0)
-        {
-            await ProcessAdminCodesAsync(AdminLevel.Admin2, result, batch, ct);
-            batch.Clear();
-        }
-        result.RecordsFound = totalRecords;
-        return result;
-    }
-
-    private async Task ProcessAdminCodesAsync(AdminLevel level, ParserResult result, IEnumerable<AdminXCodeRecord> batch, CancellationToken ct)
-    {
-        var added = await _dataProcessor.ProcessAdminCodeBatchAsync(level, batch, ct);
-        result.RecordsProcessed += batch.Count();
-        result.RecordsAdded += added;
+        return ParseStream(
+            stream,
+            RowParser.Admin2Code,
+            _dataProcessor.ProcessAdmin2CodeBatchAsync,
+            filter,
+            ct);
     }
     #endregion Admin Codes Parser
 
     #region Geonames Parser
+    /// <inheritdoc/>
     public async Task<ParserResult> ParseGeoNamesDataAsync(string isoCode, Func<GeonameRecord, bool>? filter = null, CancellationToken ct = default)
     {
         return await ParseGeoNamesDataAsync(new HttpClient(), isoCode, filter, ct);
     }
 
+    /// <inheritdoc/>
     public async Task<ParserResult> ParseGeoNamesDataAsync(HttpClient systemHttpClient, string isoCode, Func<GeonameRecord, bool>? filter = null, CancellationToken ct = default)
     {
         isoCode = isoCode.ToUpperInvariant();
         if (string.IsNullOrWhiteSpace(isoCode)
             || (isoCode.Length != 2 && isoCode != "ALL"))
-        {
             return ParserResult.Error($"Invalid ISO code: {isoCode}");
-        }
 
         var requestUri = isoCode == "ALL"
             ? GeonamesUri.GeonamesUrl("allCountries")
             : GeonamesUri.GeonamesUrl(isoCode);
 
         using var httpClient = systemHttpClient;
-
         using var stream = await httpClient.GetStreamAsync(requestUri, ct);
-
         using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
 
         // Find the first .txt file in the archive
         var txtEntry = archive.Entries.FirstOrDefault(entry => entry.Name == $"{isoCode}.txt");
         if (txtEntry == null)
-        {
             return ParserResult.Error($"No .txt file found for ISO code: {isoCode}");
-        }
 
         using var entryStream = txtEntry.Open();
-        using var reader = new StreamReader(entryStream);
-
-        return await ParseGeoNamesDataAsync(reader, filter, ct);
+        return await ParseGeoNamesDataAsync(entryStream, filter, ct);
     }
 
-    public async Task<ParserResult> ParseGeoNamesDataAsync(StreamReader reader, Func<GeonameRecord, bool>? filter = null, CancellationToken ct = default)
+    /// <inheritdoc/>
+    public Task<ParserResult> ParseGeoNamesDataAsync(Stream stream,
+        Func<GeonameRecord, bool>? filter = null,
+        CancellationToken ct = default)
     {
-        var result = new ParserResult();
-        var totalRecords = 0;
-        var rowNumber = 0;
-        var batch = new List<GeonameRecord>(_options.ProcessingBatchSize);
-        string? line;
-        while ((line = await reader.ReadLineAsync(ct)) != null)
-        {
-            rowNumber++;
-            if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#'))
-            {
-                continue; // Skip empty or commented lines
-            }
-            totalRecords++;
-            var fields = line.Split('\t');
-            if (fields.Length < 19)
-            {
-                result.ErrorMessages.Add($"Skipping malformed row: {rowNumber} line: {line}");
-                continue; // Not enough fields
-            }
-
-            var record = new GeonameRecord
-            {
-                GeonameId = int.Parse(fields[0], CultureInfo.InvariantCulture),
-                Name = fields[1],
-                AsciiName = fields[2],
-                AlternateNames = fields[3],
-                Latitude = double.Parse(fields[4], CultureInfo.InvariantCulture),
-                Longitude = double.Parse(fields[5], CultureInfo.InvariantCulture),
-                FeatureClass = FieldParser.ParseEnum<GeonamesFeatureClass>(fields[6]),
-                FeatureCode = FieldParser.ParseEnum<GeonamesFeatureCode>(fields[7]),
-                CountryCode = fields[8],
-                Cc2 = fields[9],
-                Admin1Code = fields[10],
-                Admin2Code = fields[11],
-                Admin3Code = fields[12],
-                Admin4Code = fields[13],
-                Population = !string.IsNullOrEmpty(fields[14]) ? long.Parse(fields[14], CultureInfo.InvariantCulture) : null,
-                Elevation = !string.IsNullOrEmpty(fields[15]) ? int.Parse(fields[15], CultureInfo.InvariantCulture) : null,
-                Dem = !string.IsNullOrEmpty(fields[16]) ? int.Parse(fields[16], CultureInfo.InvariantCulture) : null,
-                Timezone = fields[17],
-                ModificationDate = FieldParser.ParseDateOnly(fields[18])
-            };
-
-            if (filter == null || filter(record))
-            {
-                batch.Add(record);
-            }
-
-            if (batch.Count >= _options.ProcessingBatchSize)
-            {
-                await ProcessGeonamesAsync(result, batch, ct);
-            }
-        }
-
-        if (batch.Count > 0)
-        {
-            await ProcessGeonamesAsync(result, batch, ct);
-        }
-
-        result.RecordsFound = totalRecords;
-
-        return result;
-    }
-
-    private async Task ProcessGeonamesAsync(ParserResult result, List<GeonameRecord> batch, CancellationToken ct)
-    {
-        var added = await _dataProcessor.ProcessGeoNameBatchAsync(batch, ct);
-        result.RecordsProcessed += batch.Count;
-        result.RecordsAdded += added;
-        batch.Clear();
+        return ParseStream(
+            stream,
+            RowParser.Geonames,
+            _dataProcessor.ProcessGeoNameBatchAsync,
+            filter,
+            ct);
     }
     #endregion Geonames Parser
 
     #region AlternaticeNamveV2 Parser
+    /// <inheritdoc/>
     public Task<ParserResult> ParseAlternateNamesV2DataAsync(string isoCode, Func<AlternateNamesV2Record, bool>? filter = null, CancellationToken ct = default)
     {
         return ParseAlternateNamesV2DataAsync(new HttpClient(), isoCode, filter, ct);
     }
 
+    /// <inheritdoc/>
     public async Task<ParserResult> ParseAlternateNamesV2DataAsync(HttpClient systemHttpClient, string isoCode, Func<AlternateNamesV2Record, bool>? filter = null, CancellationToken ct = default)
     {
         isoCode = isoCode?.ToUpperInvariant() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(isoCode)
             || (isoCode.Length != 2 && isoCode != "ALL"))
-        {
             return ParserResult.Error($"Invalid ISO code: {isoCode}");
-        }
 
         var requestUri = isoCode == "ALL"
             ? GeonamesUri.AlternateNamesV2AllUrl()
             : GeonamesUri.AlternateNamesV2Url(isoCode);
 
         using var httpClient = systemHttpClient;
-
         using var stream = await httpClient.GetStreamAsync(requestUri, ct);
-
         using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
 
         // Find the first .txt file in the archive
@@ -389,74 +175,205 @@ public class GeonamesParser : IGeonamesParser
         }
 
         using var entryStream = txtEntry.Open();
-        using var reader = new StreamReader(entryStream);
-
-        return await ParseAlternateNamesV2DataAsync(reader, filter, ct);
+        return await ParseAlternateNamesV2DataAsync(entryStream, filter, ct);
     }
 
-    public async Task<ParserResult> ParseAlternateNamesV2DataAsync(StreamReader reader, Func<AlternateNamesV2Record, bool>? filter = null, CancellationToken ct = default)
+    /// <inheritdoc/>
+    public Task<ParserResult> ParseAlternateNamesV2DataAsync(Stream stream,
+        Func<AlternateNamesV2Record, bool>? filter = null,
+        CancellationToken ct = default)
+    {
+        return ParseStream(
+            stream,
+            RowParser.AlternateNameV2,
+            _dataProcessor.ProcessAlternateNamesV2BatchAsync,
+            filter,
+            ct);
+    }
+    #endregion AlternaticeNamveV2 Parser
+
+    #region TimeZone Parser
+    /// <inheritdoc/>
+    public async Task<ParserResult> ParseTimeZoneDataAsync(Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default)
+    {
+        return await ParseTimeZoneDataAsync(new HttpClient(), filter, ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<ParserResult> ParseTimeZoneDataAsync(HttpClient systemHttpClient, Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default)
+    {
+        using var httpClient = systemHttpClient;
+        using var stream = await httpClient.GetStreamAsync(GeonamesUri.TimeZoneUrl, ct);
+        return await ParseTimeZoneDataAsync(stream, filter, ct);
+
+    }
+
+    /// <inheritdoc/>
+    public Task<ParserResult> ParseTimeZoneDataAsync(Stream reader, Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default)
+    {
+        return ParseStream(
+            reader,
+            RowParser.TimeZone,
+            _dataProcessor.ProcessTimeZoneBatchAsync,
+            filter,
+            ct);
+    }
+    #endregion TimeZone Parser
+
+    #region private helper methods
+    private delegate TRecord? RowParserDelegate<TRecord>(ReadOnlySpan<char> span, ref ParserResult result);
+
+    private async Task<ParserResult> ParseStream<TRecord>(
+        Stream reader,
+        RowParserDelegate<TRecord> rowParser,
+        Func<List<TRecord>, CancellationToken, Task<int>> batchProcessor,
+        Func<TRecord, bool>? filter,
+        CancellationToken ct) where TRecord : class, IGeonameRecord
     {
         var result = new ParserResult();
-        var totalRecords = 0;
-        var rowNumber = 0;
-        var batch = new List<AlternateNamesV2Record>(_options.ProcessingBatchSize);
-        string? line;
-        while ((line = await reader.ReadLineAsync(ct)) != null)
+        var batch = new List<TRecord>(_options.ProcessingBatchSize);
+
+        var pipeReader = PipeReader.Create(reader, new StreamPipeReaderOptions(
+            bufferSize: 131072,      // 128 KB
+            minimumReadSize: 65536,  // 64 KB
+            leaveOpen: false
+        ));
+
+        try
         {
-            rowNumber++;
-            if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#'))
+            while (true)
             {
-                continue; // Skip empty or commented lines
+                ReadResult readResult = await pipeReader.ReadAsync(ct);
+                ReadOnlySequence<byte> buffer = readResult.Buffer;
+
+                while (TryReadLine(ref buffer, out ReadOnlySequence<byte> lineBytes))
+                {
+                    await ProcessLine(lineBytes, result, batch, filter, rowParser, batchProcessor, ct);
+                }
+
+                pipeReader.AdvanceTo(buffer.Start, buffer.End);
+
+                if (readResult.IsCompleted)
+                {
+                    if (buffer.Length > 0)
+                    {
+                        await ProcessLine(buffer, result, batch, filter, rowParser, batchProcessor, ct);
+                    }
+
+                    if (batch.Count > 0)
+                    {
+                        await ProcessBatchAsync(result, batch, batchProcessor, ct);
+                    }
+                    break;
+                }
             }
-            totalRecords++;
-            var fields = line.Split('\t');
-            if (fields.Length < 10)
+        }
+        finally
+        {
+            await pipeReader.CompleteAsync();
+        }
+
+        return result;
+    }
+
+    private async Task ProcessLine<TRecord>(
+        ReadOnlySequence<byte> lineBytes,
+        ParserResult result,
+        List<TRecord> batch,
+        Func<TRecord, bool>? filter,
+        RowParserDelegate<TRecord> rowParser,
+        Func<List<TRecord>, CancellationToken, Task<int>> batchProcessor,
+        CancellationToken ct)
+    {
+        int length = (int)lineBytes.Length;
+        if (length == 0) return;
+
+        char[]? rentedArray = null;
+        try
+        {
+            rentedArray = ArrayPool<char>.Shared.Rent(Encoding.UTF8.GetMaxCharCount(length));
+            int charsCount;
+
+            if (lineBytes.IsSingleSegment)
             {
-                result.ErrorMessages.Add($"Skipping malformed row: {rowNumber} line: {line}");
-                continue; // Not enough fields
+                charsCount = Encoding.UTF8.GetChars(lineBytes.FirstSpan, rentedArray);
+            }
+            else
+            {
+                charsCount = Encoding.UTF8.GetChars(lineBytes.ToArray(), rentedArray);
             }
 
-            var record = new AlternateNamesV2Record
-            {
-                AlternateNameId = int.Parse(fields[0], CultureInfo.InvariantCulture),
-                GeonameId = int.Parse(fields[1], CultureInfo.InvariantCulture),
-                IsoLanguage = fields[2],
-                AlternateName = fields[3],
-                IsPreferredName = fields[4] == "1",
-                IsShortName = fields[5] == "1",
-                IsColloquial = fields[6] == "1",
-                IsHistoric = fields[7] == "1",
-                From = FieldParser.ParseDateOnly(fields[8]),
-                To = FieldParser.ParseDateOnly(fields[9])
-            };
+            //var lineSpan = rentedArray.AsSpan(0, charsCount);
+            var record = rowParser(rentedArray.AsSpan(0, charsCount), ref result);
 
-            if (filter == null || filter(record))
+            if (record != null && (filter == null || filter(record)))
             {
                 batch.Add(record);
             }
 
             if (batch.Count >= _options.ProcessingBatchSize)
             {
-                await ProcessAlternateNamesV2Async(result, batch, ct);
+                await ProcessBatchAsync(result, batch, batchProcessor, ct);
             }
         }
-
-        if (batch.Count > 0)
+        finally
         {
-            await ProcessAlternateNamesV2Async(result, batch, ct);
+            if (rentedArray != null)
+            {
+                ArrayPool<char>.Shared.Return(rentedArray);
+            }
         }
-
-        result.RecordsFound = totalRecords;
-
-        return result;
     }
 
-    private async Task ProcessAlternateNamesV2Async(ParserResult result, List<AlternateNamesV2Record> batch, CancellationToken ct)
+    private static async Task ProcessBatchAsync<TRecord>(
+        ParserResult result,
+        List<TRecord> batch,
+        Func<List<TRecord>, CancellationToken, Task<int>> batchProcessor,
+        CancellationToken ct)
     {
-        var added = await _dataProcessor.ProcessAlternateNamesV2BatchAsync(batch, ct);
+        var added = await batchProcessor(batch, ct);
         result.RecordsProcessed += batch.Count;
         result.RecordsAdded += added;
         batch.Clear();
     }
-    #endregion AlternaticeNamveV2 Parser
+
+    private static bool TryReadLine(ref ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> line)
+    {
+        SequencePosition? position = buffer.PositionOf((byte)'\n');
+
+        if (position == null)
+        {
+            line = default;
+            return false;
+        }
+
+        line = buffer.Slice(0, position.Value);
+        buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
+
+        // Rimuovi \r se presente (gestisce sia \n che \r\n)
+        if (line.Length > 0)
+        {
+            // Ottieni l'ultimo byte della sequenza
+            byte lastByte = GetLastByte(line);
+            if (lastByte == (byte)'\r')
+            {
+                line = line.Slice(0, line.Length - 1);
+            }
+        }
+
+        return true;
+    }
+
+    private static byte GetLastByte(ReadOnlySequence<byte> sequence)
+    {
+        if (sequence.IsSingleSegment)
+        {
+            return sequence.FirstSpan[^1];
+        }
+
+        // Per sequenze multi-segmento, trova l'ultimo byte
+        var position = sequence.GetPosition(sequence.Length - 1);
+        return sequence.Slice(position, 1).FirstSpan[0];
+    }
+    #endregion private helper methods
 }

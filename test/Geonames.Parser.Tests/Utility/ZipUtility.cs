@@ -13,7 +13,7 @@ public static class ZipUtility
         {
             var entry = archive.CreateEntry($"{isoCode}.txt");
             using var entryStream = entry.Open();
-            using var sw = new StreamWriter(entryStream, Encoding.UTF8);
+            using var sw = new StreamWriter(entryStream, new UTF8Encoding(false));
             sw.Write(content);
         }
         ms.Position = 0;

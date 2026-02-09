@@ -163,7 +163,8 @@ public class GeonamesParserAlternateNamesV2Tests
         var content = new StringBuilder();
         content.AppendLine("1\t123\ten\tMain Name\t1\t0\t0\t0\t\t");
         content.AppendLine("2\t124\tfr\tShort\t0\t1\t0\t0\t\t");
-        content.AppendLine("3\t125\tde\tHistoric\t0\t0\t0\t1\t\t");
+        content.AppendLine("3\t125\tde\tHistoric\t0\t0\t1\t0\t\t");
+        content.AppendLine("4\t125\tde\tHistoric\t0\t0\t0\t1\t\t");
 
         using var ms = ZipUtility.CreateZipWithContent(isoCode, content.ToString());
         var httpContent = new StreamContent(ms);
@@ -171,8 +172,8 @@ public class GeonamesParserAlternateNamesV2Tests
 
         var mockProcessor = new Mock<IDataProcessor>();
         var capturedBatch = new List<AlternateNamesV2Record>();
-        mockProcessor.Setup(x => x.ProcessAlternateNamesV2BatchAsync(It.IsAny<List<AlternateNamesV2Record>>(), ct))
-            .Callback((ICollection<AlternateNamesV2Record> b, CancellationToken ct) => capturedBatch.AddRange(b))
+        mockProcessor.Setup(x => x.ProcessAlternateNamesV2BatchAsync(It.IsAny<IEnumerable<AlternateNamesV2Record>>(), ct))
+            .Callback((IEnumerable<AlternateNamesV2Record> b, CancellationToken ct) => capturedBatch.AddRange(b))
             .ReturnsAsync((List<AlternateNamesV2Record> b, CancellationToken ct) => b.Count);
 
         var parser = new GeonamesParser(mockProcessor.Object);
@@ -181,10 +182,11 @@ public class GeonamesParserAlternateNamesV2Tests
         var result = await parser.ParseAlternateNamesV2DataAsync(client, isoCode, null, ct);
 
         // Assert
-        Assert.Equal(3, result.RecordsFound);
-        Assert.Equal(3, result.RecordsProcessed);
+        Assert.Equal(4, result.RecordsFound);
+        Assert.Equal(4, result.RecordsProcessed);
         Assert.True(capturedBatch[0].IsPreferredName);
         Assert.True(capturedBatch[1].IsShortName);
-        Assert.True(capturedBatch[2].IsHistoric);
+        Assert.True(capturedBatch[2].IsColloquial);
+        Assert.True(capturedBatch[3].IsHistoric);
     }
 }

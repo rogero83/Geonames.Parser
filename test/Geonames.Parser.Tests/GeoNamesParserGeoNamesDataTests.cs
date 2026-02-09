@@ -161,16 +161,16 @@ public class GeoNamesParserGeoNamesDataTests
         // Arrange
         var isoCode = "ALL";
         var content = new StringBuilder();
-        content.AppendLine("123\tNew York\tNew York\tAlt\t40.7128\t-74.0060\tP\tPPL\tUS\t\tNY\t\t\t\t\t\t\tAmerica/New_York\t2020-01-01");
         content.AppendLine("456\tToronto\tToronto\tAlt\t43.6532\t-79.3832\tP\tPPL\tCA\t\tON\t\t\t\t\t\t\tAmerica/Toronto\t2020-01-01");
+        content.AppendLine("123\tNew York\tNew York\tAlt\t40.7128\t-74.0060\tP\tPPL\tUS\t\tNY\t\t\t\t\t\t\tAmerica/New_York\t2020-01-01");
 
         using var ms = ZipUtility.CreateZipWithContent(isoCode, content.ToString());
         var httpContent = new StreamContent(ms);
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessGeoNameBatchAsync(It.IsAny<List<GeonameRecord>>(), ct))
-            .ReturnsAsync((List<GeonameRecord> b, System.Threading.CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessGeoNameBatchAsync(It.IsAny<IEnumerable<GeonameRecord>>(), ct))
+            .ReturnsAsync((IEnumerable<GeonameRecord> b, CancellationToken ct) => b.Count());
 
         var parser = new GeonamesParser(mockProcessor.Object);
 
@@ -178,6 +178,7 @@ public class GeoNamesParserGeoNamesDataTests
         var result = await parser.ParseGeoNamesDataAsync(client, isoCode, null, ct);
 
         // Assert
+        Assert.Equal(2, result.RecordsTotal);
         Assert.Equal(2, result.RecordsFound);
         Assert.Equal(2, result.RecordsProcessed);
         Assert.Equal(2, result.RecordsAdded);

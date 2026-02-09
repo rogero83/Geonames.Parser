@@ -1,23 +1,23 @@
 ﻿using Geonames.Parser;
 using Geonames.Parser.Console;
+using Geonames.Parser.Contract.Abstractions;
 using Geonames.Parser.Contract.Models;
-using Geonames.Parser.Contract.Utility;
 
-Console.WriteLine("Hello, World!");
+Console.WriteLine("Geonames Test Console");
 
-var processor = new ConsoleDataProcessor();
+IDataProcessor processor = new ConsoleDataProcessor();
 var parser = new GeonamesParser(processor);
 
 ParserResult? result = null;
 while (true)
 {
-    processor.rowNumber = 0;
     Console.WriteLine("== Parser console test ==");
     Console.WriteLine("1. Parsing Country Info data");
     Console.WriteLine("2. Parsing GeonamesData");
     Console.WriteLine("3. Parsing AlternateNamesV2");
     Console.WriteLine("4. Parsing Admin1Code");
     Console.WriteLine("5. Parsing Admin2Code");
+    Console.WriteLine("6. Parsing TimeZone");
     var selectedOption = Console.ReadLine();
 
     try
@@ -32,20 +32,9 @@ while (true)
         }
         else if (selectedOption == "3")
         {
-            Console.WriteLine("Insert ISO code");
-            var isoCode = Console.ReadLine();
-            if (!string.IsNullOrWhiteSpace(isoCode) && isoCode.Length == 2)
+            (bool flowControl, result) = await TestingAlternateNameV2Parser(parser, result);
+            if (!flowControl)
             {
-                Func<AlternateNamesV2Record, bool> filters = (record) =>
-                {
-                    return record.From.HasValue || record.To.HasValue;
-                };
-
-                result = await parser.ParseAlternateNamesV2DataAsync(isoCode, filters);
-            }
-            else
-            {
-                Console.WriteLine("Invalid ISO code.");
                 continue;
             }
         }
@@ -67,6 +56,15 @@ while (true)
 
             result = await parser.ParseAdmin2CodesAsync(admin1Filter);
         }
+        else if (selectedOption == "6")
+        {
+            var admin1Filter = new Func<TimeZoneRecord, bool>(record =>
+            {
+                return record.CountryCode.StartsWith('I');
+            });
+
+            result = await parser.ParseTimeZoneDataAsync(admin1Filter);
+        }
         else
         {
             Console.WriteLine("Invalid option selected.");
@@ -74,7 +72,7 @@ while (true)
         }
 
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine($"Records Found: {result.RecordsFound}, Processed: {result.RecordsProcessed}, Added: {result.RecordsAdded}");
+        Console.WriteLine($"Total row: {result.RecordsTotal}, Records Found: {result.RecordsFound}, Processed: {result.RecordsProcessed}, Added: {result.RecordsAdded}");
         if (result.ErrorMessages.Count != 0)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
@@ -95,11 +93,13 @@ while (true)
 }
 
 static async Task<ParserResult> TestingGeonamesParser(
-    GeonamesParser parser,
+    IGeonamesParser parser,
     ParserResult? result)
 {
     Console.WriteLine("Insert ISO code");
     var isoCode = Console.ReadLine() ?? string.Empty;
+
+    Func<GeonameRecord, bool>? filter = null;
 
     //var filter = new Func<GeonameRecord, bool>(record =>
     //{
@@ -107,13 +107,37 @@ static async Task<ParserResult> TestingGeonamesParser(
     //    return record.FeatureClass == GeoNamesFeatureClass.P;
     //});
 
-    var filter = new Func<GeonameRecord, bool>(record =>
-    {
-        return record.FeatureCode.HasValue
-            && LocalizationFeatureCodes.PopulatedPlaces.Primary.Contains(record.FeatureCode.Value);
-    });
+    //var filter = new Func<GeonameRecord, bool>(record =>
+    //{
+    //    return record.FeatureCode.HasValue
+    //        && LocalizationFeatureCodes.PopulatedPlaces.Primary.Contains(record.FeatureCode.Value);
+    //});
 
     result = await parser.ParseGeoNamesDataAsync(isoCode, filter);
 
     return result;
+}
+
+static async Task<(bool flowControl, ParserResult? value)> TestingAlternateNameV2Parser(
+    IGeonamesParser parser,
+    ParserResult? result)
+{
+    Console.WriteLine("Insert ISO code");
+    var isoCode = Console.ReadLine();
+    if (!string.IsNullOrWhiteSpace(isoCode) && isoCode.Length == 2)
+    {
+        static bool filters(AlternateNamesV2Record record)
+        {
+            return record.From.HasValue || record.To.HasValue;
+        }
+
+        result = await parser.ParseAlternateNamesV2DataAsync(isoCode, filters);
+    }
+    else
+    {
+        Console.WriteLine("Invalid ISO code.");
+        return (flowControl: false, value: null);
+    }
+
+    return (flowControl: true, value: null);
 }

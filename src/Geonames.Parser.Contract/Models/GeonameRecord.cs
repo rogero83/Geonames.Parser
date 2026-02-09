@@ -1,3 +1,4 @@
+using Geonames.Parser.Contract.Abstractions;
 using Geonames.Parser.Contract.Enums;
 
 namespace Geonames.Parser.Contract.Models;
@@ -6,7 +7,7 @@ namespace Geonames.Parser.Contract.Models;
 /// Represents a single record from a GeoNames data file.
 /// See: https://www.geonames.org/export/dump/readme.txt
 /// </summary>
-public class GeonameRecord
+public class GeonameRecord : IGeonameRecord
 {
     /// <summary>
     /// geonameid : integer id of record in geonames database

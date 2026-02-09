@@ -140,3 +140,11 @@ The project is designed to be easily extensible. The core logic resides in `Geon
 - **Geonames.Parser.Contract**: Contains the `IDataProcessor` interface, data models (DTOs), and enums.
 
 To extend the functionality (e.g., adding support for new Geonames files), verify the stream parsing logic in the main parser class and add corresponding models in the contract library.
+
+## Performance Considerations
+
+The project `Geonames.Parser.Benchmarks` contains benchmarks for parsing large datasets. You can run these benchmarks to evaluate performance and identify bottlenecks.
+
+```csharp
+dotnet run -c Release -f net8.0 net9.0 net10.0
+```
