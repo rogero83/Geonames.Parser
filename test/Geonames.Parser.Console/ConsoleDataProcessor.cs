@@ -68,4 +68,14 @@ internal class ConsoleDataProcessor : IDataProcessor
         }
         return batch.Count();
     }
+
+    public async Task<int> ProcessPostalCodeBatchAsync(IEnumerable<PostalCodeRecord> batch, CancellationToken ct = default)
+    {
+        var rowNumber = 0;
+        foreach (var record in batch)
+        {
+            System.Console.WriteLine($"{++rowNumber} CountryCode: {record.CountryCode}, PostalCode: {record.PostalCode}, PlaceName: {record.PlaceName}, Admin1Name: {record.Admin1Name}, Admin1Code: {record.Admin1Code}, Admin2Name: {record.Admin2Name}, Admin2Code: {record.Admin2Code}, Admin3Name: {record.Admin3Name}, Admin3Code: {record.Admin3Code}, Latitude: {record.Latitude}, Longitude: {record.Longitude}, Accuracy: {record.Accuracy}");
+        }
+        return batch.Count();
+    }
 }

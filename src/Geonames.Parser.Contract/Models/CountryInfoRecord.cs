@@ -8,6 +8,9 @@ namespace Geonames.Parser.Contract.Models;
 /// </summary>
 public class CountryInfoRecord : IGeonameRecord
 {
+    /// <inheritdoc/>
+    public static int NumberOfFields => 19;
+
     /// <summary>
     /// Coutry ISO code
     /// </summary>

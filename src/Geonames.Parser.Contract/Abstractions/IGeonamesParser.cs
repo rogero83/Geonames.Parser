@@ -217,4 +217,66 @@ public interface IGeonamesParser
     /// <returns>The task result contains a <see cref="ParserResult"/> with the filtered time zone records.</returns>
     Task<ParserResult> ParseTimeZoneDataAsync(Stream stream, Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default);
     #endregion TimeZone Parser
+
+    #region Postal Code Parser
+    /// <summary>
+    /// Parses postal code records for a specified ISO country code from a remote source.
+    /// </summary>
+    /// <param name="isoCode">The ISO 3166-1 alpha-2 country code (e.g., "US", "IT"). Use "ALL" to parse all postal code records.</param>
+    /// <param name="filter">An optional predicate used to filter each parsed <see cref="PostalCodeRecord"/>. Only records for which the
+    /// predicate returns <see langword="true"/> are included. If null, all records are included.</param>
+    /// <param name="ct">A cancellation token that can be used to cancel the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous parse operation. The task result contains a <see cref="ParserResult"/>
+    /// with the filtered postal code records.</returns>
+    Task<ParserResult> ParsePostalCodeDataAsync(string isoCode, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Parses postal code records for a specified ISO country code from a remote source, with an option to request full precision data.
+    /// </summary>
+    /// <param name="isoCode">The ISO 3166-1 alpha-2 country code (e.g., "US", "IT"). Use "ALL" to parse all postal code records.</param>
+    /// <param name="full">If <see langword="true"/>, attempts to fetch full precision postal code data (e.g., with "full" suffix in GeoNames) where available.</param>
+    /// <param name="filter">An optional predicate used to filter each parsed <see cref="PostalCodeRecord"/>. Only records for which the
+    /// predicate returns <see langword="true"/> are included. If null, all records are included.</param>
+    /// <param name="ct">A cancellation token that can be used to cancel the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous parse operation. The task result contains a <see cref="ParserResult"/>
+    /// with the filtered postal code records.</returns>
+    Task<ParserResult> ParsePostalCodeDataAsync(string isoCode, bool full, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Parses postal code records for a specified ISO country code from a remote source using a provided HTTP client.
+    /// </summary>
+    /// <param name="systemHttpClient">The HTTP client instance used to send requests to the remote service. Must not be null.</param>
+    /// <param name="isoCode">The ISO 3166-1 alpha-2 country code (e.g., "US", "IT"). Use "ALL" to parse all postal code records.</param>
+    /// <param name="filter">An optional predicate used to filter each parsed <see cref="PostalCodeRecord"/>. Only records for which the
+    /// predicate returns <see langword="true"/> are included. If null, all records are included.</param>
+    /// <param name="ct">A cancellation token that can be used to cancel the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous parse operation. The task result contains a <see cref="ParserResult"/>
+    /// with the filtered postal code records.</returns>
+    Task<ParserResult> ParsePostalCodeDataAsync(HttpClient systemHttpClient, string isoCode, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Parses postal code records for a specified ISO country code from a remote source using a provided HTTP client, with an option to request full precision data.
+    /// </summary>
+    /// <param name="systemHttpClient">The HTTP client instance used to send requests to the remote service. Must not be null.</param>
+    /// <param name="isoCode">The ISO 3166-1 alpha-2 country code (e.g., "US", "IT"). Use "ALL" to parse all postal code records.</param>
+    /// <param name="full">If <see langword="true"/>, attempts to fetch full precision postal code data (e.g., with "full" suffix in GeoNames) where available.</param>
+    /// <param name="filter">An optional predicate used to filter each parsed <see cref="PostalCodeRecord"/>. Only records for which the
+    /// predicate returns <see langword="true"/> are included. If null, all records are included.</param>
+    /// <param name="ct">A cancellation token that can be used to cancel the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous parse operation. The task result contains a <see cref="ParserResult"/>
+    /// with the filtered postal code records.</returns>
+    Task<ParserResult> ParsePostalCodeDataAsync(HttpClient systemHttpClient, string isoCode, bool full, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Parses postal code records from the provided stream.
+    /// </summary>
+    /// <param name="stream">A Stream that supplies the input data to parse. The stream must be readable and positioned at the start of
+    /// the data to be parsed.</param>
+    /// <param name="filter">An optional predicate used to filter parsed records. Only records for which the predicate
+    /// returns <see langword="true"/> are included in the result. If null, all records are included.</param>
+    /// <param name="ct">A CancellationToken that can be used to cancel the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous parse operation. The task result contains a <see cref="ParserResult"/> with the parsed
+    /// and filtered postal code records.</returns>
+    Task<ParserResult> ParsePostalCodeDataAsync(Stream stream, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default);
+    #endregion Postal Code Parser
 }

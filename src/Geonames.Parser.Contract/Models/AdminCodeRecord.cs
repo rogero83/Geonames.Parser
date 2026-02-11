@@ -71,6 +71,9 @@ public class Admin1CodeRecord : AdminXCodeRecord
 /// </summary>
 public abstract class AdminXCodeRecord : IGeonameRecord
 {
+    /// <inheritdoc/>
+    public static int NumberOfFields => 4;
+
     /// <summary>
     /// Code
     /// </summary>

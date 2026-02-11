@@ -3,6 +3,8 @@
 #pragma warning disable CS1591
 public static class GeonamesUri
 {
+    private static readonly string[] PostalCodeWithFull = ["CA", "GB", "NL"];
+
     public static string Admin1CodesUrl => "https://download.geonames.org/export/dump/admin1CodesASCII.txt";
     public static string Admin2CodesUrl => "https://download.geonames.org/export/dump/admin2Codes.txt";
     public static string CountryInfoUrl => "https://download.geonames.org/export/dump/countryInfo.txt";
@@ -10,5 +12,9 @@ public static class GeonamesUri
     public static string AlternateNamesV2Url(string iso) => $"https://download.geonames.org/export/dump/alternatenames/{iso.ToUpperInvariant()}.zip";
     public static string AlternateNamesV2AllUrl() => $"https://download.geonames.org/export/dump/alternateNamesV2.zip";
     public static string TimeZoneUrl => "https://download.geonames.org/export/dump/timeZones.txt";
+
+    public static bool HasFullPostalCode(string iso) => PostalCodeWithFull.Contains(iso.ToUpperInvariant());
+    public static string PostalCodeUrl(string iso) =>
+            $"https://download.geonames.org/export/zip/{iso.ToUpperInvariant()}.zip";
 }
 #pragma warning restore CS1591

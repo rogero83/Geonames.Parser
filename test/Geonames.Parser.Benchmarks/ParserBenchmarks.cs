@@ -19,6 +19,7 @@ public class ParserBenchmarks
         public Task<int> ProcessGeoNameBatchAsync(IEnumerable<GeonameRecord> batch, CancellationToken ct = default) => Task.FromResult(batch.Count());
         public Task<int> ProcessAlternateNamesV2BatchAsync(IEnumerable<AlternateNamesV2Record> batch, CancellationToken ct = default) => Task.FromResult(batch.Count());
         public Task<int> ProcessTimeZoneBatchAsync(IEnumerable<TimeZoneRecord> batch, CancellationToken ct = default) => Task.FromResult(batch.Count());
+        public Task<int> ProcessPostalCodeBatchAsync(IEnumerable<PostalCodeRecord> batch, CancellationToken ct = default) => Task.FromResult(batch.Count());
     }
 
     private GeonamesParser _parser = null!;
@@ -58,7 +59,7 @@ public class ParserBenchmarks
     }
 
     [Benchmark]
-    public async Task ParseGeonames()
+    public async Task ParseGeonamesAsync()
     {
         using var reader = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(_geonamesContent));
         await _parser.ParseGeoNamesDataAsync(reader);

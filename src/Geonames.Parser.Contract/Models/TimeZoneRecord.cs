@@ -7,6 +7,9 @@ namespace Geonames.Parser.Contract.Models;
 /// </summary>
 public class TimeZoneRecord : IGeonameRecord
 {
+    /// <inheritdoc/>
+    public static int NumberOfFields => 5;
+
     /// <summary>
     /// Country code ISO-3166 2-letter
     /// </summary>

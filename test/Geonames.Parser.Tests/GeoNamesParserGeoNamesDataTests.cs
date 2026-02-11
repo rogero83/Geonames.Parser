@@ -164,7 +164,7 @@ public class GeoNamesParserGeoNamesDataTests
         content.AppendLine("456\tToronto\tToronto\tAlt\t43.6532\t-79.3832\tP\tPPL\tCA\t\tON\t\t\t\t\t\t\tAmerica/Toronto\t2020-01-01");
         content.AppendLine("123\tNew York\tNew York\tAlt\t40.7128\t-74.0060\tP\tPPL\tUS\t\tNY\t\t\t\t\t\t\tAmerica/New_York\t2020-01-01");
 
-        using var ms = ZipUtility.CreateZipWithContent(isoCode, content.ToString());
+        using var ms = ZipUtility.CreateZipWithContent("allCountries", content.ToString());
         var httpContent = new StreamContent(ms);
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 

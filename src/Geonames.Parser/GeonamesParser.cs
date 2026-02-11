@@ -3,10 +3,7 @@ using Geonames.Parser.Contract.Abstractions;
 using Geonames.Parser.Contract.Models;
 using Geonames.Parser.Contract.Utility;
 using Geonames.Parser.RowParsers;
-using System.Buffers;
 using System.IO.Compression;
-using System.IO.Pipelines;
-using System.Text;
 
 namespace Geonames.Parser;
 
@@ -37,11 +34,12 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
     public Task<ParserResult> ParseCountryInfoAsync(Stream stream,
         Func<CountryInfoRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return ParseStream(
+        return PipeReadAsync.ParseStream(
             stream,
             RowParser.CountryInfo,
             _dataProcessor.ProcessCountryInfoBatchAsync,
             filter,
+            _options.ProcessingBatchSize,
             ct);
     }
     #endregion Country Info Parser
@@ -64,11 +62,12 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
     /// <inheritdoc/>
     public Task<ParserResult> ParseAdmin1CodesAsync(Stream stream, Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return ParseStream(
+        return PipeReadAsync.ParseStream(
             stream,
             RowParser.Admin1Code,
             _dataProcessor.ProcessAdmin1CodeBatchAsync,
             filter,
+            _options.ProcessingBatchSize,
             ct);
     }
 
@@ -89,11 +88,12 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
     /// <inheritdoc/>
     public Task<ParserResult> ParseAdmin2CodesAsync(Stream stream, Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return ParseStream(
+        return PipeReadAsync.ParseStream(
             stream,
             RowParser.Admin2Code,
             _dataProcessor.ProcessAdmin2CodeBatchAsync,
             filter,
+            _options.ProcessingBatchSize,
             ct);
     }
     #endregion Admin Codes Parser
@@ -111,14 +111,14 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
         isoCode = isoCode.ToUpperInvariant();
         if (string.IsNullOrWhiteSpace(isoCode)
             || (isoCode.Length != 2 && isoCode != "ALL"))
-            return ParserResult.Error($"Invalid ISO code: {isoCode}");
+            return ParserResult.Error($"Invalid ISO code: {isoCode}, only ISO 2-alpha or 'ALL'");
 
-        var requestUri = isoCode == "ALL"
-            ? GeonamesUri.GeonamesUrl("allCountries")
-            : GeonamesUri.GeonamesUrl(isoCode);
+        if (isoCode == "ALL")
+            isoCode = "allCountries";
 
-        using var httpClient = systemHttpClient;
-        using var stream = await httpClient.GetStreamAsync(requestUri, ct);
+        var requestUri = GeonamesUri.GeonamesUrl(isoCode);
+
+        using var stream = await systemHttpClient.GetStreamAsync(requestUri, ct);
         using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
 
         // Find the first .txt file in the archive
@@ -135,11 +135,12 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
         Func<GeonameRecord, bool>? filter = null,
         CancellationToken ct = default)
     {
-        return ParseStream(
+        return PipeReadAsync.ParseStream(
             stream,
             RowParser.Geonames,
             _dataProcessor.ProcessGeoNameBatchAsync,
             filter,
+            _options.ProcessingBatchSize,
             ct);
     }
     #endregion Geonames Parser
@@ -159,9 +160,16 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
             || (isoCode.Length != 2 && isoCode != "ALL"))
             return ParserResult.Error($"Invalid ISO code: {isoCode}");
 
-        var requestUri = isoCode == "ALL"
-            ? GeonamesUri.AlternateNamesV2AllUrl()
-            : GeonamesUri.AlternateNamesV2Url(isoCode);
+        string requestUri;
+        if (isoCode == "ALL")
+        {
+            requestUri = GeonamesUri.AlternateNamesV2AllUrl();
+            isoCode = "alternateNamesV2";
+        }
+        else
+        {
+            requestUri = GeonamesUri.AlternateNamesV2Url(isoCode);
+        }
 
         using var httpClient = systemHttpClient;
         using var stream = await httpClient.GetStreamAsync(requestUri, ct);
@@ -183,11 +191,12 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
         Func<AlternateNamesV2Record, bool>? filter = null,
         CancellationToken ct = default)
     {
-        return ParseStream(
+        return PipeReadAsync.ParseStream(
             stream,
             RowParser.AlternateNameV2,
             _dataProcessor.ProcessAlternateNamesV2BatchAsync,
             filter,
+            _options.ProcessingBatchSize,
             ct);
     }
     #endregion AlternaticeNamveV2 Parser
@@ -205,175 +214,81 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
         using var httpClient = systemHttpClient;
         using var stream = await httpClient.GetStreamAsync(GeonamesUri.TimeZoneUrl, ct);
         return await ParseTimeZoneDataAsync(stream, filter, ct);
-
     }
 
     /// <inheritdoc/>
-    public Task<ParserResult> ParseTimeZoneDataAsync(Stream reader, Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParseTimeZoneDataAsync(Stream stream, Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return ParseStream(
-            reader,
+        return PipeReadAsync.ParseStream(
+            stream,
             RowParser.TimeZone,
             _dataProcessor.ProcessTimeZoneBatchAsync,
             filter,
+            _options.ProcessingBatchSize,
             ct);
     }
     #endregion TimeZone Parser
 
-    #region private helper methods
-    private delegate TRecord? RowParserDelegate<TRecord>(ReadOnlySpan<char> span, ref ParserResult result);
-
-    private async Task<ParserResult> ParseStream<TRecord>(
-        Stream reader,
-        RowParserDelegate<TRecord> rowParser,
-        Func<List<TRecord>, CancellationToken, Task<int>> batchProcessor,
-        Func<TRecord, bool>? filter,
-        CancellationToken ct) where TRecord : class, IGeonameRecord
+    #region Postal Code Parser
+    /// <inheritdoc/>
+    public Task<ParserResult> ParsePostalCodeDataAsync(string isoCode, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        var result = new ParserResult();
-        var batch = new List<TRecord>(_options.ProcessingBatchSize);
-
-        var pipeReader = PipeReader.Create(reader, new StreamPipeReaderOptions(
-            bufferSize: 131072,      // 128 KB
-            minimumReadSize: 65536,  // 64 KB
-            leaveOpen: false
-        ));
-
-        try
-        {
-            while (true)
-            {
-                ReadResult readResult = await pipeReader.ReadAsync(ct);
-                ReadOnlySequence<byte> buffer = readResult.Buffer;
-
-                while (TryReadLine(ref buffer, out ReadOnlySequence<byte> lineBytes))
-                {
-                    await ProcessLine(lineBytes, result, batch, filter, rowParser, batchProcessor, ct);
-                }
-
-                pipeReader.AdvanceTo(buffer.Start, buffer.End);
-
-                if (readResult.IsCompleted)
-                {
-                    if (buffer.Length > 0)
-                    {
-                        await ProcessLine(buffer, result, batch, filter, rowParser, batchProcessor, ct);
-                    }
-
-                    if (batch.Count > 0)
-                    {
-                        await ProcessBatchAsync(result, batch, batchProcessor, ct);
-                    }
-                    break;
-                }
-            }
-        }
-        finally
-        {
-            await pipeReader.CompleteAsync();
-        }
-
-        return result;
+        return ParsePostalCodeDataAsync(new HttpClient(), isoCode, filter, ct);
     }
 
-    private async Task ProcessLine<TRecord>(
-        ReadOnlySequence<byte> lineBytes,
-        ParserResult result,
-        List<TRecord> batch,
-        Func<TRecord, bool>? filter,
-        RowParserDelegate<TRecord> rowParser,
-        Func<List<TRecord>, CancellationToken, Task<int>> batchProcessor,
-        CancellationToken ct)
+    /// <inheritdoc/>
+    public Task<ParserResult> ParsePostalCodeDataAsync(string isoCode, bool full, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        int length = (int)lineBytes.Length;
-        if (length == 0) return;
-
-        char[]? rentedArray = null;
-        try
-        {
-            rentedArray = ArrayPool<char>.Shared.Rent(Encoding.UTF8.GetMaxCharCount(length));
-            int charsCount;
-
-            if (lineBytes.IsSingleSegment)
-            {
-                charsCount = Encoding.UTF8.GetChars(lineBytes.FirstSpan, rentedArray);
-            }
-            else
-            {
-                charsCount = Encoding.UTF8.GetChars(lineBytes.ToArray(), rentedArray);
-            }
-
-            //var lineSpan = rentedArray.AsSpan(0, charsCount);
-            var record = rowParser(rentedArray.AsSpan(0, charsCount), ref result);
-
-            if (record != null && (filter == null || filter(record)))
-            {
-                batch.Add(record);
-            }
-
-            if (batch.Count >= _options.ProcessingBatchSize)
-            {
-                await ProcessBatchAsync(result, batch, batchProcessor, ct);
-            }
-        }
-        finally
-        {
-            if (rentedArray != null)
-            {
-                ArrayPool<char>.Shared.Return(rentedArray);
-            }
-        }
+        return ParsePostalCodeDataAsync(new HttpClient(), isoCode, full, filter, ct);
     }
 
-    private static async Task ProcessBatchAsync<TRecord>(
-        ParserResult result,
-        List<TRecord> batch,
-        Func<List<TRecord>, CancellationToken, Task<int>> batchProcessor,
-        CancellationToken ct)
+    /// <inheritdoc/>
+    public Task<ParserResult> ParsePostalCodeDataAsync(HttpClient systemHttpClient, string isoCode, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        var added = await batchProcessor(batch, ct);
-        result.RecordsProcessed += batch.Count;
-        result.RecordsAdded += added;
-        batch.Clear();
+        return ParsePostalCodeDataAsync(systemHttpClient, isoCode, true, filter, ct);
     }
 
-    private static bool TryReadLine(ref ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> line)
+    /// <inheritdoc/>
+    public async Task<ParserResult> ParsePostalCodeDataAsync(HttpClient systemHttpClient, string isoCode, bool full = true, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        SequencePosition? position = buffer.PositionOf((byte)'\n');
+        isoCode = isoCode.ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(isoCode)
+            || (isoCode.Length != 2 && isoCode != "ALL"))
+            return ParserResult.Error($"Invalid ISO code: {isoCode}, only ISO 2-alpha or 'allCountries'");
 
-        if (position == null)
-        {
-            line = default;
-            return false;
-        }
+        if (isoCode == "ALL")
+            isoCode = "allCountries";
 
-        line = buffer.Slice(0, position.Value);
-        buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
+        if (full && GeonamesUri.HasFullPostalCode(isoCode))
+            isoCode = $"{isoCode}_full";
 
-        // Rimuovi \r se presente (gestisce sia \n che \r\n)
-        if (line.Length > 0)
-        {
-            // Ottieni l'ultimo byte della sequenza
-            byte lastByte = GetLastByte(line);
-            if (lastByte == (byte)'\r')
-            {
-                line = line.Slice(0, line.Length - 1);
-            }
-        }
+        var requestUri = GeonamesUri.PostalCodeUrl(isoCode);
 
-        return true;
+        using var stream = await systemHttpClient.GetStreamAsync(requestUri, ct);
+        using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
+
+        // Find the first .txt file in the archive
+        var txtEntry = archive.Entries.FirstOrDefault(entry => entry.Name == $"{isoCode}.txt");
+        if (txtEntry == null)
+            return ParserResult.Error($"No .txt file found for ISO code: {isoCode}");
+
+        using var entryStream = txtEntry.Open();
+
+        return await ParsePostalCodeDataAsync(entryStream, filter, ct);
     }
 
-    private static byte GetLastByte(ReadOnlySequence<byte> sequence)
+    /// <inheritdoc/>
+    public Task<ParserResult> ParsePostalCodeDataAsync(Stream stream, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        if (sequence.IsSingleSegment)
-        {
-            return sequence.FirstSpan[^1];
-        }
-
-        // Per sequenze multi-segmento, trova l'ultimo byte
-        var position = sequence.GetPosition(sequence.Length - 1);
-        return sequence.Slice(position, 1).FirstSpan[0];
+        return PipeReadAsync.ParseStream(
+            stream,
+            RowParser.PostalCode,
+            _dataProcessor.ProcessPostalCodeBatchAsync,
+            filter,
+            _options.ProcessingBatchSize,
+            ct);
     }
-    #endregion private helper methods
+    #endregion Postal Code Parser
+
+
 }
