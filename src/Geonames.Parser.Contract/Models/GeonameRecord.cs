@@ -9,6 +9,9 @@ namespace Geonames.Parser.Contract.Models;
 /// </summary>
 public class GeonameRecord : IGeonameRecord
 {
+    /// <inheritdoc/>
+    public static int NumberOfFields => 19;
+
     /// <summary>
     /// geonameid : integer id of record in geonames database
     /// </summary>

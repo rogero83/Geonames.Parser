@@ -18,5 +18,6 @@ public interface IDataProcessor
     Task<int> ProcessGeoNameBatchAsync(IEnumerable<GeonameRecord> batch, CancellationToken ct = default);
     Task<int> ProcessAlternateNamesV2BatchAsync(IEnumerable<AlternateNamesV2Record> batch, CancellationToken ct = default);
     Task<int> ProcessTimeZoneBatchAsync(IEnumerable<TimeZoneRecord> batch, CancellationToken ct = default);
+    Task<int> ProcessPostalCodeBatchAsync(IEnumerable<PostalCodeRecord> batch, CancellationToken ct = default);
 #pragma warning restore CS1591
 }

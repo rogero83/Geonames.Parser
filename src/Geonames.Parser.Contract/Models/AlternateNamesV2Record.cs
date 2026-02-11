@@ -8,6 +8,9 @@ namespace Geonames.Parser.Contract.Models;
 /// </summary>
 public class AlternateNamesV2Record : IGeonameRecord
 {
+    /// <inheritdoc/>
+    public static int NumberOfFields => 10;
+
     /// <summary>
     /// alternateNameId : the id of this alternate name, int
     /// </summary>

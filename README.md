@@ -4,12 +4,17 @@
 ![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)
 ![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
 
+| Package Name | Version | Downloads |
+|---|---|---|
+| [R83.Geonames.Parser](https://www.nuget.org/packages/R83.Geonames.Parser) | [![NuGet](https://img.shields.io/nuget/v/R83.Geonames.Parser.svg)](https://www.nuget.org/packages/R83.Geonames.Parser/) |[![NuGet](https://img.shields.io/nuget/dt/R83.Geonames.Parser)](https://www.nuget.org/packages/R83.Geonames.Parser) |
+| [R83.Geonames.Parser.Contract](https://www.nuget.org/packages/R83.Geonames.Parser.Contract/) | [![NuGet](https://img.shields.io/nuget/v/R83.Geonames.Parser.Contract.svg)](https://www.nuget.org/packages/R83.Geonames.Parser.Contract/) | [![NuGet](https://img.shields.io/nuget/dt/R83.Geonames.Parser.Contract)](https://www.nuget.org/packages/R83.Geonames.Parser.Contract/)
+
 
 A high-performance .NET library designed to parse data exports from Geonames.org. This solution handles the retrieval, decompression, and parsing of Geonames data files, allowing developers to focus on data integration and storage logic.
 
 ## Key Features
 
-- **Comprehensive Parsing**: Supports Country Info, Admin Codes (Level 1 & 2), Geonames data, and Alternate Names V2.
+- **Comprehensive Parsing**: Supports Country Info, Admin Codes (Level 1 & 2), Geonames data, Alternate Names V2, Time Zone.
 - **Efficient Processing**: Implements batch processing to handle large datasets efficiently.
 - **Filtering**: Built-in support for filtering records (e.g., specific feature codes or countries) during the parsing phase.
 - **Async Support**: Fully asynchronous API for non-blocking I/O operations.
@@ -42,7 +47,13 @@ public class CustomDataProcessor : IDataProcessor
         return batch.Count;
     }
 
-    public async Task<int> ProcessAdminCodeBatchAsync(AdminLevel level, IEnumerable<AdminXCodeRecord> batch, CancellationToken ct = default)
+    public async Task<int> ProcessAdmin1CodeBatchAsync(IEnumerable<Admin1CodeRecord> batch, CancellationToken ct = default)
+    {
+        // Handle admin codes
+        return batch.Count();
+    }
+
+    public async Task<int> ProcessAdmin2CodeBatchAsync(IEnumerable<Admin2CodeRecord> batch, CancellationToken ct = default)
     {
         // Handle admin codes
         return batch.Count();
@@ -52,6 +63,18 @@ public class CustomDataProcessor : IDataProcessor
     {
         // Handle alternate names
         return batch.Count;
+    }
+
+    public async Task<int> ProcessTimeZoneBatchAsync(ICollection<TimeZoneRecord> batch, CancellationToken ct = default)
+    {
+        // Handle time zones
+        return batch.Count;
+    }
+
+    public async Task<int> ProcessPostalCodeBatchAsync(IEnumerable<PostalCodeRecord> batch, CancellationToken ct = default)
+    {
+        // Handle postal codes
+        return batch.Count();
     }
 }
 ```

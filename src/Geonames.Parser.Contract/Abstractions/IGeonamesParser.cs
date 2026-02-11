@@ -217,4 +217,12 @@ public interface IGeonamesParser
     /// <returns>The task result contains a <see cref="ParserResult"/> with the filtered time zone records.</returns>
     Task<ParserResult> ParseTimeZoneDataAsync(Stream stream, Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default);
     #endregion TimeZone Parser
+
+    #region Postal Code Parser
+    Task<ParserResult> ParsePostalCodeDataAsync(string isoCode, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default);
+    Task<ParserResult> ParsePostalCodeDataAsync(string isoCode, bool full, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default);
+    Task<ParserResult> ParsePostalCodeDataAsync(HttpClient systemHttpClient, string isoCode, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default);
+    Task<ParserResult> ParsePostalCodeDataAsync(HttpClient systemHttpClient, string isoCode, bool full, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default);
+    Task<ParserResult> ParsePostalCodeDataAsync(Stream stream, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default);
+    #endregion Postal Code Parser
 }

@@ -7,7 +7,7 @@ namespace Geonames.Parser.RowParsers;
 
 internal static class RowParser
 {
-    private static ReadOnlySpan<char> Tab => "\t".AsSpan();
+    private static char Tab => '\t';
     private static ReadOnlySpan<char> Hash => "#".AsSpan();
     private static string True => "1";
     private static ReadOnlySpan<char> Country => "Country".AsSpan();
@@ -24,9 +24,9 @@ internal static class RowParser
         }
         result.RecordsFound++;
 
-        Span<Range> ranges = stackalloc Range[19];
+        Span<Range> ranges = stackalloc Range[CountryInfoRecord.NumberOfFields];
         int count = span.Split(ranges, Tab);
-        if (count != 19)
+        if (count != CountryInfoRecord.NumberOfFields)
         {
             result.ErrorMessages.Add($"Skipping malformed row: {result.RecordsTotal} line: {span}");
             return null; // Not enough fields
@@ -77,11 +77,9 @@ internal static class RowParser
         }
         result.RecordsFound++;
 
-        Span<Range> ranges = stackalloc Range[19];
-
+        Span<Range> ranges = stackalloc Range[GeonameRecord.NumberOfFields];
         int count = span.Split(ranges, Tab);
-
-        if (count != 19)
+        if (count != GeonameRecord.NumberOfFields)
         {
             result.ErrorMessages.Add($"Skipping malformed row: {result.RecordsTotal} line: {span}");
             return null; // Not enough fields
@@ -133,9 +131,9 @@ internal static class RowParser
         }
         result.RecordsFound++;
 
-        Span<Range> ranges = stackalloc Range[4];
+        Span<Range> ranges = stackalloc Range[Admin1CodeRecord.NumberOfFields];
         int count = span.Split(ranges, Tab);
-        if (count != 4)
+        if (count != Admin1CodeRecord.NumberOfFields)
         {
             result.ErrorMessages.Add($"Skipping malformed row: {result.RecordsTotal} line: {span}");
             return null; // Not enough fields
@@ -169,11 +167,9 @@ internal static class RowParser
         }
         result.RecordsFound++;
 
-        Span<Range> ranges = stackalloc Range[4];
-
+        Span<Range> ranges = stackalloc Range[Admin2CodeRecord.NumberOfFields];
         int count = span.Split(ranges, Tab);
-
-        if (count != 4)
+        if (count != Admin2CodeRecord.NumberOfFields)
         {
             result.ErrorMessages.Add($"Skipping malformed row: {result.RecordsTotal} line: {span}");
             return null; // Not enough fields
@@ -206,9 +202,9 @@ internal static class RowParser
         }
         result.RecordsFound++;
 
-        Span<Range> ranges = stackalloc Range[10];
+        Span<Range> ranges = stackalloc Range[AlternateNamesV2Record.NumberOfFields];
         int count = span.Split(ranges, Tab);
-        if (count != 10)
+        if (count != AlternateNamesV2Record.NumberOfFields)
         {
             result.ErrorMessages.Add($"Skipping malformed row: {result.RecordsTotal} line: {span}");
             return null; // Not enough fields
@@ -247,9 +243,9 @@ internal static class RowParser
         }
         result.RecordsFound++;
 
-        Span<Range> ranges = stackalloc Range[5];
+        Span<Range> ranges = stackalloc Range[TimeZoneRecord.NumberOfFields];
         int count = span.Split(ranges, Tab);
-        if (count != 5)
+        if (count != TimeZoneRecord.NumberOfFields)
         {
             result.ErrorMessages.Add($"Skipping malformed row: {result.RecordsTotal} line: {span}");
             return null; // Not enough fields
@@ -264,6 +260,49 @@ internal static class RowParser
                 GMTOffset = double.Parse(span[ranges[2]], CultureInfo.InvariantCulture),
                 DSTOffset = double.Parse(span[ranges[3]], CultureInfo.InvariantCulture),
                 RawOffset = double.Parse(span[ranges[4]], CultureInfo.InvariantCulture)
+            };
+        }
+        catch (Exception e)
+        {
+            result.ErrorMessages.Add($"Skipping error parser row: {result.RecordsTotal} line: {e.Message}");
+            return null;
+        }
+    }
+
+    internal static PostalCodeRecord? PostalCode(ReadOnlySpan<char> span, ref ParserResult result)
+    {
+        if (span.IsWhiteSpace()) return null; // Skip empty
+        result.RecordsTotal++;
+        if (span.StartsWith(Hash) || span.StartsWith(Country)) // <= Header only fort Timezone file
+        {
+            return null; // Skip commented lines
+        }
+        result.RecordsFound++;
+
+        Span<Range> ranges = stackalloc Range[PostalCodeRecord.NumberOfFields];
+        int count = span.Split(ranges, Tab);
+        if (count != PostalCodeRecord.NumberOfFields)
+        {
+            result.ErrorMessages.Add($"Skipping malformed row: {result.RecordsTotal} line: {span}");
+            return null; // Not enough fields
+        }
+
+        try
+        {
+            return new PostalCodeRecord
+            {
+                CountryCode = span[ranges[0]].ToString(),
+                PostalCode = span[ranges[1]].ToString(),
+                PlaceName = span[ranges[2]].ToString(),
+                Admin1Name = span[ranges[3]].ToString(),
+                Admin1Code = span[ranges[4]].ToString(),
+                Admin2Name = span[ranges[5]].ToString(),
+                Admin2Code = span[ranges[6]].ToString(),
+                Admin3Name = span[ranges[7]].ToString(),
+                Admin3Code = span[ranges[8]].ToString(),
+                Latitude = double.Parse(span[ranges[9]], CultureInfo.InvariantCulture),
+                Longitude = double.Parse(span[ranges[10]], CultureInfo.InvariantCulture),
+                Accuracy = int.Parse(span[ranges[11]], CultureInfo.InvariantCulture)
             };
         }
         catch (Exception e)
