@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Geonames.Parser.RowParsers;
 
-public static class PipeReadAsync
+internal static class PipeReadAsync
 {
     #region private helper methods
     public delegate TRecord? RowParserDelegate<TRecord>(ReadOnlySpan<char> span, ref ParserResult result);
