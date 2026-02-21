@@ -2,13 +2,13 @@
 using Geonames.Parser.Contract.Models;
 using System.Buffers;
 using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Geonames.Parser.RowParsers;
 
 internal static class PipeReadGenericAsync
 {
-    #region private helper methods
     public delegate TRecord? RowParserDelegate<TRecord>(ReadOnlySpan<char> span, ref ParserResult result);
 
     public static async Task<ParserResult> ParseStream<TRecord>(
@@ -35,78 +35,39 @@ internal static class PipeReadGenericAsync
 
         try
         {
-            while (true)
+            ReadResult readResult;
+            do
             {
-                ReadResult readResult = await pipeReader.ReadAsync(ct).ConfigureAwait(false);
+                readResult = await pipeReader.ReadAsync(ct).ConfigureAwait(false);
                 ReadOnlySequence<byte> buffer = readResult.Buffer;
 
-                while (true)
+                while (TryGetNextLine(ref buffer, readResult.IsCompleted, out ReadOnlySequence<byte> lineBytes))
                 {
-                    bool hasLine = TryReadLine(ref buffer, out ReadOnlySequence<byte> lineBytes);
-
-                    if (!hasLine)
-                    {
-                        if (readResult.IsCompleted && buffer.Length > 0)
-                        {
-                            lineBytes = buffer;
-                            buffer = buffer.Slice(buffer.End);
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-
                     int length = (int)lineBytes.Length;
                     if (length == 0) continue;
 
-                    if (length > currentByteCapacity)
-                    {
-                        ArrayPool<byte>.Shared.Return(tempBytes);
-                        ArrayPool<char>.Shared.Return(tempChars);
+                    EnsureCapacity(length, ref currentByteCapacity, ref tempBytes, ref tempChars);
 
-                        while (currentByteCapacity < length)
-                        {
-                            currentByteCapacity *= 2;
-                        }
-                        tempBytes = ArrayPool<byte>.Shared.Rent(currentByteCapacity);
-
-                        currentCharCapacity = Encoding.UTF8.GetMaxCharCount(currentByteCapacity);
-                        tempChars = ArrayPool<char>.Shared.Rent(currentCharCapacity);
-                    }
-
-                    int charsCount;
-                    if (lineBytes.IsSingleSegment)
-                    {
-                        charsCount = Encoding.UTF8.GetChars(lineBytes.FirstSpan, tempChars);
-                    }
-                    else
-                    {
-                        lineBytes.CopyTo(tempBytes.AsSpan(0, length));
-                        charsCount = Encoding.UTF8.GetChars(tempBytes.AsSpan(0, length), tempChars);
-                    }
+                    int charsCount = DecodeChars(in lineBytes, length, tempBytes, tempChars);
 
                     var record = rowParser(tempChars.AsSpan(0, charsCount), ref result);
 
-                    if (record != null && (filter == null || filter(record)))
+                    if (IsValidRecord(record, filter))
                     {
                         result.RecordsProcessed++;
-                        var added = await recordProcessor(record, ct).ConfigureAwait(false);
+                        var added = await recordProcessor(record!, ct).ConfigureAwait(false);
                         result.RecordsAdded += added;
                     }
                 }
 
                 pipeReader.AdvanceTo(buffer.Start, buffer.End);
+            }
+            while (!readResult.IsCompleted);
 
-                if (readResult.IsCompleted)
-                {
-                    if (finalizeProcessor is not null)
-                    {
-                        var added = await finalizeProcessor.Invoke(ct).ConfigureAwait(false);
-                        result.RecordsAdded += added;
-                    }
-                    break;
-                }
+            if (finalizeProcessor is not null)
+            {
+                var added = await finalizeProcessor.Invoke(ct).ConfigureAwait(false);
+                result.RecordsAdded += added;
             }
         }
         finally
@@ -119,38 +80,102 @@ internal static class PipeReadGenericAsync
         return result;
     }
 
+    #region private helper methods
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsValidRecord<TRecord>(TRecord? record, Func<TRecord, bool>? filter)
+        where TRecord : class, IGeonameRecord
+    {
+        if (record == null) return false;
+        if (filter != null && !filter(record)) return false;
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool TryGetNextLine(ref ReadOnlySequence<byte> buffer, bool isCompleted, out ReadOnlySequence<byte> lineBytes)
+    {
+        if (TryReadLine(ref buffer, out lineBytes))
+        {
+            return true;
+        }
+
+        if (isCompleted && buffer.Length > 0)
+        {
+            lineBytes = buffer;
+            buffer = buffer.Slice(buffer.End);
+            return true;
+        }
+
+        return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void EnsureCapacity(int length, ref int currentByteCapacity, ref byte[] tempBytes, ref char[] tempChars)
+    {
+        if (length <= currentByteCapacity) return;
+
+        ArrayPool<byte>.Shared.Return(tempBytes);
+        ArrayPool<char>.Shared.Return(tempChars);
+
+        while (currentByteCapacity < length)
+        {
+            currentByteCapacity *= 2;
+        }
+        tempBytes = ArrayPool<byte>.Shared.Rent(currentByteCapacity);
+
+        int currentCharCapacity = Encoding.UTF8.GetMaxCharCount(currentByteCapacity);
+        tempChars = ArrayPool<char>.Shared.Rent(currentCharCapacity);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int DecodeChars(in ReadOnlySequence<byte> lineBytes, int length, byte[] tempBytes, char[] tempChars)
+    {
+        if (lineBytes.IsSingleSegment)
+        {
+            return Encoding.UTF8.GetChars(lineBytes.FirstSpan, tempChars);
+        }
+
+        lineBytes.CopyTo(tempBytes.AsSpan(0, length));
+        return Encoding.UTF8.GetChars(tempBytes.AsSpan(0, length), tempChars);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool TryReadLine(ref ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> line)
     {
         var reader = new SequenceReader<byte>(buffer);
         if (reader.TryReadTo(out line, (byte)'\n'))
         {
             buffer = buffer.Slice(reader.Position);
-
-            // Handle \r
-            int len = (int)line.Length;
-            if (len > 0)
-            {
-                if (line.IsSingleSegment)
-                {
-                    if (line.FirstSpan[^1] == (byte)'\r')
-                    {
-                        line = line.Slice(0, len - 1);
-                    }
-                }
-                else
-                {
-                    var pos = line.GetPosition(len - 1);
-                    if (line.Slice(pos, 1).FirstSpan[0] == (byte)'\r')
-                    {
-                        line = line.Slice(0, len - 1);
-                    }
-                }
-            }
+            TrimCarriageReturn(ref line);
             return true;
         }
 
         line = default;
         return false;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void TrimCarriageReturn(ref ReadOnlySequence<byte> line)
+    {
+        int len = (int)line.Length;
+        if (len == 0) return;
+
+        if (line.IsSingleSegment)
+        {
+            if (line.FirstSpan[^1] == (byte)'\r')
+            {
+                line = line.Slice(0, len - 1);
+            }
+        }
+        else
+        {
+            var pos = line.GetPosition(len - 1);
+            if (line.Slice(pos, 1).FirstSpan[0] == (byte)'\r')
+            {
+                line = line.Slice(0, len - 1);
+            }
+        }
+    }
+
     #endregion private helper methods
 }

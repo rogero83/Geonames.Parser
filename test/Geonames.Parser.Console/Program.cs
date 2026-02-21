@@ -23,61 +23,18 @@ while (true)
 
     try
     {
-        if (selectedOption == "1")
+        result = selectedOption switch
         {
-            result = await parser.ParseCountryInfoAsync(processor.ProcessCountryInfoRecordAsync,
-                processor.FinalizeCountryInfoRecordAsync);
-        }
-        else if (selectedOption == "2")
-        {
-            result = await TestingGeonamesParser(parser);
-        }
-        else if (selectedOption == "3")
-        {
-            result = await TestingAlternateNameV2Parser(parser);
-        }
-        else if (selectedOption == "4")
-        {
-            var admin1Filter = new Func<Admin1CodeRecord, bool>(record =>
-            {
-                return record.CountryCode == "US";
-            });
-
-            result = await parser.ParseAdmin1CodesAsync(processor.ProcessAdmin1CodeRecordAsync,
-                processor.FinalizeAdmin1CodeRecordAsync,
-                filter: admin1Filter);
-        }
-        else if (selectedOption == "5")
-        {
-            var admin1Filter = new Func<Admin2CodeRecord, bool>(record =>
-            {
-                return record.CountryCode == "US" && record.Admin1Code == "AL";
-            });
-
-            result = await parser.ParseAdmin2CodesAsync(processor.ProcessAdmin2CodeRecordAsync,
-                processor.FinalizeAdmin2CodeRecordAsync,
-                filter: admin1Filter);
-        }
-        else if (selectedOption == "6")
-        {
-            var timeZoneFilter = new Func<TimeZoneRecord, bool>(record =>
-            {
-                return record.CountryCode.StartsWith('I');
-            });
-
-            result = await parser.ParseTimeZoneDataAsync(processor.ProcessTimeZoneRecordAsync,
-                processor.FinalizeTimeZoneRecordAsync,
-                filter: timeZoneFilter);
-        }
-        else if (selectedOption == "7")
-        {
-            result = await TestingPostalCode(parser);
-        }
-        else
-        {
-            Console.WriteLine("Invalid option selected.");
-            break;
-        }
+            "1" => await parser.ParseCountryInfoAsync(processor.ProcessCountryInfoRecordAsync,
+                                            processor.FinalizeCountryInfoRecordAsync),
+            "2" => await TestingGeonamesParser(parser),
+            "3" => await TestingAlternateNameV2Parser(parser),
+            "4" => await TestingAdmin1Parser(processor, parser),
+            "5" => await TestingAdmin2Parser(processor, parser),
+            "6" => await TestingTimeZoneParser(processor, parser),
+            "7" => await TestingPostalCode(parser),
+            _ => null
+        };
 
         if (result == null)
         {
@@ -170,5 +127,44 @@ async Task<ParserResult?> TestingPostalCode(GeonamesParser parser)
         processor.ProcessPostalCodeRecordAsync,
         processor.FinalizePostalCodeRecordAsync,
         filter: filter);
+    return result;
+}
+
+static async Task<ParserResult?> TestingAdmin1Parser(IDataProcessor processor, GeonamesParser parser)
+{
+    var admin1Filter = new Func<Admin1CodeRecord, bool>(record =>
+    {
+        return record.CountryCode == "US";
+    });
+
+    var result = await parser.ParseAdmin1CodesAsync(processor.ProcessAdmin1CodeRecordAsync,
+        processor.FinalizeAdmin1CodeRecordAsync,
+        filter: admin1Filter);
+    return result;
+}
+
+static async Task<ParserResult?> TestingAdmin2Parser(IDataProcessor processor, GeonamesParser parser)
+{
+    var admin1Filter = new Func<Admin2CodeRecord, bool>(record =>
+    {
+        return record.CountryCode == "US" && record.Admin1Code == "AL";
+    });
+
+    var result = await parser.ParseAdmin2CodesAsync(processor.ProcessAdmin2CodeRecordAsync,
+        processor.FinalizeAdmin2CodeRecordAsync,
+        filter: admin1Filter);
+    return result;
+}
+
+static async Task<ParserResult?> TestingTimeZoneParser(IDataProcessor processor, GeonamesParser parser)
+{
+    var timeZoneFilter = new Func<TimeZoneRecord, bool>(record =>
+    {
+        return record.CountryCode.StartsWith('I');
+    });
+
+    var result = await parser.ParseTimeZoneDataAsync(processor.ProcessTimeZoneRecordAsync,
+        processor.FinalizeTimeZoneRecordAsync,
+        filter: timeZoneFilter);
     return result;
 }
