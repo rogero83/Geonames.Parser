@@ -30,11 +30,11 @@ while (true)
         }
         else if (selectedOption == "2")
         {
-            result = await TestingGeonamesParser(parser, result);
+            result = await TestingGeonamesParser(parser);
         }
         else if (selectedOption == "3")
         {
-            result = await TestingAlternateNameV2Parser(parser, result);
+            result = await TestingAlternateNameV2Parser(parser);
         }
         else if (selectedOption == "4")
         {
@@ -71,7 +71,7 @@ while (true)
         }
         else if (selectedOption == "7")
         {
-            result = await TestingPostalCode(parser, result);
+            result = await TestingPostalCode(parser);
         }
         else
         {
@@ -107,24 +107,23 @@ while (true)
 }
 
 async Task<ParserResult> TestingGeonamesParser(
-    IGeonamesParser parser,
-    ParserResult? result)
+    IGeonamesParser parser)
 {
     Console.Write("Insert ISO code or 'ALL' : ");
     var isoCode = Console.ReadLine() ?? string.Empty;
 
     Func<GeonameRecord, bool>? filter = null;
 
-    //var filter = new Func<GeonameRecord, bool>(record =>
-    //{
-    //    return record.FeatureCode == Geonames.Parser.Contract.Enums.GeonamesFeatureCode.ADM3;
-    //});
+    ////var filter = new Func<GeonameRecord, bool>(record =>
+    ////{
+    ////    return record.FeatureCode == Geonames.Parser.Contract.Enums.GeonamesFeatureCode.ADM3;
+    ////});
 
-    //var filter = new Func<GeonameRecord, bool>(record =>
-    //{
-    //    return record.FeatureCode.HasValue
-    //        && LocalizationFeatureCodes.PopulatedPlaces.Primary.Contains(record.FeatureCode.Value);
-    //});
+    ////var filter = new Func<GeonameRecord, bool>(record =>
+    ////{
+    ////    return record.FeatureCode.HasValue
+    ////        && LocalizationFeatureCodes.PopulatedPlaces.Primary.Contains(record.FeatureCode.Value);
+    ////});
 
     result = await parser.ParseGeoNamesDataAsync(isoCode,
         processor.ProcessGeoNameRecordAsync,
@@ -134,9 +133,7 @@ async Task<ParserResult> TestingGeonamesParser(
     return result;
 }
 
-async Task<ParserResult?> TestingAlternateNameV2Parser(
-    IGeonamesParser parser,
-    ParserResult? result)
+async Task<ParserResult?> TestingAlternateNameV2Parser(IGeonamesParser parser)
 {
     Console.Write("Insert ISO code or 'ALL' : ");
     var isoCode = Console.ReadLine() ?? string.Empty;
@@ -146,10 +143,10 @@ async Task<ParserResult?> TestingAlternateNameV2Parser(
         return !string.IsNullOrEmpty(record.IsoLanguage) && record.IsoLanguage.Length == 2;
     });
 
-    //var filters = new Func<AlternateNamesV2Record, bool>(record =>
-    //{
-    //    return record.From.HasValue || record.To.HasValue;
-    //});
+    ////var filters = new Func<AlternateNamesV2Record, bool>(record =>
+    ////{
+    ////    return record.From.HasValue || record.To.HasValue;
+    ////});
 
     result = await parser.ParseAlternateNamesV2DataAsync(isoCode,
         processor.ProcessAlternateNamesV2RecordAsync,
@@ -159,7 +156,7 @@ async Task<ParserResult?> TestingAlternateNameV2Parser(
     return result;
 }
 
-async Task<ParserResult?> TestingPostalCode(GeonamesParser parser, ParserResult? result)
+async Task<ParserResult?> TestingPostalCode(GeonamesParser parser)
 {
     Console.Write("Insert ISO code or 'ALL' ");
     var isoCode = Console.ReadLine() ?? string.Empty;

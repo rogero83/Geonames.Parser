@@ -30,7 +30,7 @@ dotnet add package R83.Geonames.Parser
 
 The parser is now based on functional delegates, allowing you to process each record as it is parsed.
 
-### 1. Simple Processing with Lambdas
+### Simple Processing with Lambdas
 
 ```csharp
 using Geonames.Parser;
@@ -50,7 +50,7 @@ var result = await parser.ParseGeoNamesDataAsync("IT",
 Console.WriteLine($"Total processed: {result.RecordsProcessed}");
 ```
 
-### 2. Using IDataProcessor (Recommended for Complex Projects)
+### Using IDataProcessor (Recommended for Complex Projects)
 
 If you prefer a more structured approach, you can still implement `IDataProcessor` and pass its methods as delegates.
 
@@ -79,7 +79,7 @@ var result = await parser.ParseGeoNamesDataAsync("US",
     processor.FinalizeGeoNameRecordAsync);
 ```
 
-### 3. Dependency Injection
+### Dependency Injection
 
 Register the parser in your `IServiceCollection`:
 

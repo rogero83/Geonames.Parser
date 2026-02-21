@@ -1,4 +1,5 @@
 ﻿using Geonames.Parser.Contract.Enums;
+using System.Collections.Immutable;
 
 namespace Geonames.Parser.Contract.Utility;
 
@@ -15,7 +16,7 @@ public static class LocalizationFeatureCodes
         /// <summary>
         /// Codici PRIMARI - da includere sempre
         /// </summary>
-        public static readonly HashSet<GeonamesFeatureCode> Primary =
+        public static readonly ImmutableArray<GeonamesFeatureCode> Primary =
         [
             GeonamesFeatureCode.PPLC,   // Capitale nazionale
             GeonamesFeatureCode.PPLA,   // Capoluogo di regione/stato
@@ -28,7 +29,7 @@ public static class LocalizationFeatureCodes
         /// <summary>
         /// Codici SECONDARI - includere in base alle esigenze
         /// </summary>
-        public static readonly HashSet<GeonamesFeatureCode> Secondary =
+        public static readonly ImmutableArray<GeonamesFeatureCode> Secondary =
         [
             GeonamesFeatureCode.PPLX,   // Sezione di città (quartieri)
             GeonamesFeatureCode.PPLL,   // Località abitata minore
@@ -38,7 +39,7 @@ public static class LocalizationFeatureCodes
         /// <summary>
         /// Codici STORICI - opzionali (per app storiche)
         /// </summary>
-        public static readonly HashSet<GeonamesFeatureCode> Historical =
+        public static readonly ImmutableArray<GeonamesFeatureCode> Historical =
         [
             GeonamesFeatureCode.PPLCH,  // Ex capitale
             GeonamesFeatureCode.PPLH,   // Luogo abitato storico
@@ -49,8 +50,8 @@ public static class LocalizationFeatureCodes
         /// <summary>
         /// Tutti i codici di luoghi abitati
         /// </summary>
-        public static readonly HashSet<GeonamesFeatureCode> All =
-            Primary.Union(Secondary).Union(Historical).ToHashSet();
+        public static readonly ImmutableArray<GeonamesFeatureCode> All =
+            [.. Primary.Union(Secondary).Union(Historical)];
     }
 
     /// <summary>
@@ -61,7 +62,7 @@ public static class LocalizationFeatureCodes
         /// <summary>
         /// Divisioni amministrative attive
         /// </summary>
-        public static readonly HashSet<GeonamesFeatureCode> Active =
+        public static readonly ImmutableArray<GeonamesFeatureCode> Active =
         [
             GeonamesFeatureCode.PCLI,   // Paese indipendente
             GeonamesFeatureCode.ADM1,   // Divisione 1° ordine (Regione)
@@ -74,11 +75,11 @@ public static class LocalizationFeatureCodes
         /// <summary>
         /// Divisioni amministrative storiche
         /// </summary>
-        public static readonly HashSet<GeonamesFeatureCode> Historical = new()
-        {
+        public static readonly ImmutableArray<GeonamesFeatureCode> Historical =
+        [
             GeonamesFeatureCode.PCLH,   // Ex paese
             GeonamesFeatureCode.ADM1H,  // Ex divisione 1° ordine
             GeonamesFeatureCode.ADM2H,  // Ex divisione 2° ordine
-        };
+        ];
     }
 }

@@ -26,3 +26,5 @@ var result = await parser.ParseGeoNamesDataAsync("US", async (record, ct) =>
     return 1;
 });
 ```
+
+Read more about the available methods and usage in the [API documentation](https://github.com/rogero83/Geonames.Parser)

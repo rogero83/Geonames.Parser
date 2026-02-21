@@ -15,7 +15,7 @@ internal class ConsoleDataProcessor(int maxBatchSize = 100) : IDataProcessor
         countryInfoInternal.Add(record);
         if (countryInfoInternal.Count >= maxBatchSize)
         {
-            return ProcessCountryInfoBatchAsync(countryInfoInternal, ct);
+            return Task.FromResult(ProcessCountryInfoBatch(countryInfoInternal));
         }
         return Task.FromResult(0);
     }
@@ -24,24 +24,22 @@ internal class ConsoleDataProcessor(int maxBatchSize = 100) : IDataProcessor
     {
         if (countryInfoInternal.Count > 0)
         {
-            var lastRecord = ProcessCountryInfoBatchAsync(countryInfoInternal, ct);
+            var lastRecord = ProcessCountryInfoBatch(countryInfoInternal);
             recordNumber = 0;
-            return lastRecord;
+            return Task.FromResult(lastRecord);
         }
         return Task.FromResult(0);
     }
 
-    private async Task<int> ProcessCountryInfoBatchAsync(IEnumerable<CountryInfoRecord> batch, CancellationToken ct = default)
+    private int ProcessCountryInfoBatch(IEnumerable<CountryInfoRecord> batch)
     {
         var recordProcessed = 0;
-        foreach (var item in batch)
+        foreach (var item in batch.Where(x => x is not null))
         {
-            if (item != null)
-            {
-                recordProcessed++;
-                System.Console.WriteLine($"{++recordNumber} Country: {item.Country}, Capital: {item.Capital}, Population: {item.Population}");
-            }
+            recordProcessed++;
+            System.Console.WriteLine($"{++recordNumber} Country: {item.Country}, Capital: {item.Capital}, Population: {item.Population}");
         }
+
         countryInfoInternal.Clear();
         return recordProcessed;
     }

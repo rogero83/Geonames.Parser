@@ -153,8 +153,11 @@ public class GeonamesParser()
         var txtEntry = archive.Entries.FirstOrDefault(entry => entry.Name == $"{isoCode}.txt");
         if (txtEntry == null)
             return ParserResult.Error($"No .txt file found for ISO code: {isoCode}");
-
+#if NET10_0_OR_GREATER
+        using var entryStream = await txtEntry.OpenAsync(ct);
+#else
         using var entryStream = txtEntry.Open();
+#endif
         return await ParseGeoNamesDataAsync(entryStream, recordProcessor, finalizeProcessor, filter, ct);
     }
 
@@ -218,7 +221,11 @@ public class GeonamesParser()
             return ParserResult.Error($"No .txt file found for ISO code: {isoCode}");
         }
 
+#if NET10_0_OR_GREATER
+        using var entryStream = await txtEntry.OpenAsync(ct);
+#else
         using var entryStream = txtEntry.Open();
+# endif        
         return await ParseAlternateNamesV2DataAsync(entryStream, recordProcessor, finalizeProcessor, filter, ct);
     }
 
@@ -331,8 +338,11 @@ public class GeonamesParser()
         if (txtEntry == null)
             return ParserResult.Error($"No .txt file found for ISO code: {isoCode}");
 
+#if NET10_0_OR_GREATER
+        using var entryStream = await txtEntry.OpenAsync(ct);
+#else
         using var entryStream = txtEntry.Open();
-
+#endif
         return await ParsePostalCodeDataAsync(entryStream, recordProcessor, finalizeProcessor, filter, ct);
     }
 

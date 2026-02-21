@@ -11,7 +11,7 @@ namespace Geonames.Parser.Benchmarks;
 [MemoryDiagnoser]
 public class ParserBenchmarks
 {
-    private class NoOpDataProcessor : IDataProcessor
+    private sealed class NoOpDataProcessor : IDataProcessor
     {
         public Task<int> ProcessCountryInfoRecordAsync(CountryInfoRecord record, CancellationToken ct = default) => Task.FromResult(1);
         public Task<int> ProcessAdmin1CodeRecordAsync(Admin1CodeRecord record, CancellationToken ct = default) => Task.FromResult(1);

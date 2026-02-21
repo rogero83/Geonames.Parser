@@ -50,7 +50,6 @@ internal static class PipeReadGenericAsync
                         {
                             lineBytes = buffer;
                             buffer = buffer.Slice(buffer.End);
-                            hasLine = true;
                         }
                         else
                         {
