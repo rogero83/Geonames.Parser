@@ -9,165 +9,112 @@
 | [R83.Geonames.Parser](https://www.nuget.org/packages/R83.Geonames.Parser) | [![NuGet](https://img.shields.io/nuget/v/R83.Geonames.Parser.svg)](https://www.nuget.org/packages/R83.Geonames.Parser/) |[![NuGet](https://img.shields.io/nuget/dt/R83.Geonames.Parser)](https://www.nuget.org/packages/R83.Geonames.Parser) |
 | [R83.Geonames.Parser.Contract](https://www.nuget.org/packages/R83.Geonames.Parser.Contract/) | [![NuGet](https://img.shields.io/nuget/v/R83.Geonames.Parser.Contract.svg)](https://www.nuget.org/packages/R83.Geonames.Parser.Contract/) | [![NuGet](https://img.shields.io/nuget/dt/R83.Geonames.Parser.Contract)](https://www.nuget.org/packages/R83.Geonames.Parser.Contract/)
 
-
-A high-performance .NET library designed to parse data exports from Geonames.org. This solution handles the retrieval, decompression, and parsing of Geonames data files, allowing developers to focus on data integration and storage logic.
+A high-performance .NET library designed to parse data exports from Geonames.org. Version 1.0.0 introduces a modernized, functional-oriented API designed for extreme speed and low memory footprint using `System.IO.Pipelines` and `Span<char>`.
 
 ## Key Features
 
-- **Comprehensive Parsing**: Supports Country Info, Admin Codes (Level 1 & 2), Geonames data, Alternate Names V2, Time Zone.
-- **Efficient Processing**: Implements batch processing to handle large datasets efficiently.
-- **Filtering**: Built-in support for filtering records (e.g., specific feature codes or countries) during the parsing phase.
-- **Async Support**: Fully asynchronous API for non-blocking I/O operations.
+- **Extreme Performance**: Low-allocation parsing using modern .NET features.
+- **Functional API**: Process records via delegates for maximum flexibility.
+- **Comprehensive Support**: Parses Country Info, Admin Codes, GeoNames records, Alternate Names V2, Time Zones, and Postal Codes.
+- **Streaming & Zip Support**: Automatically handles remote ZIP downloads and streams.
+- **Filtering**: Built-in support for filtering records during the parsing process.
+- **Multi-Framework**: Supports .NET 8.0, 9.0, and 10.0.
 
-## Integration Guide
+## Installation
 
-To use this parser, you must provide an implementation of the data processing logic. This design allows the parser to remain agnostic of the storage medium (SQL, NoSQL, File System, etc.).
+```bash
+dotnet add package R83.Geonames.Parser
+```
 
-### 1. Implement IDataProcessor
+## Quick Start
 
-Create a class that implements the `Geonames.Parser.Contract.Abstractions.IDataProcessor` interface. This interface defines methods for handling batches of parsed records.
+The parser is now based on functional delegates, allowing you to process each record as it is parsed.
+
+### Simple Processing with Lambdas
 
 ```csharp
+using Geonames.Parser;
 using Geonames.Parser.Contract.Abstractions;
-using Geonames.Parser.Contract.Models;
-// ...
 
-public class CustomDataProcessor : IDataProcessor
+IGeonamesParser parser = new GeonamesParser();
+
+// Parse data for Italy (IT)
+var result = await parser.ParseGeoNamesDataAsync("IT", 
+    async (record, ct) => 
+    {
+        // Process each record here
+        Console.WriteLine($"Processing: {record.Name}");
+        return 1; // Return 1 for each record processed
+    });
+
+Console.WriteLine($"Total processed: {result.RecordsProcessed}");
+```
+
+### Using IDataProcessor (Recommended for Complex Projects)
+
+If you prefer a more structured approach, you can still implement `IDataProcessor` and pass its methods as delegates.
+
+```csharp
+public class MyDbProcessor : IDataProcessor
 {
-    public async Task<int> ProcessGeoNameBatchAsync(ICollection<GeonameRecord> batch, CancellationToken ct = default)
+    public async Task<int> ProcessGeoNameRecordAsync(GeonameRecord record, CancellationToken ct)
     {
-        // Example: Bulk insert into database
-        // await _repository.BulkInsertAsync(batch);
-        return batch.Count;
+        // Save to database
+        return 1;
     }
 
-    public async Task<int> ProcessCountryInfoBatchAsync(ICollection<CountryInfoRecord> batch, CancellationToken ct = default)
+    public async Task<int> FinalizeGeoNameRecordAsync(CancellationToken ct)
     {
-        // Handle country info
-        return batch.Count;
+        // Commit transaction or cleanup
+        return 0;
     }
-
-    public async Task<int> ProcessAdmin1CodeBatchAsync(IEnumerable<Admin1CodeRecord> batch, CancellationToken ct = default)
-    {
-        // Handle admin codes
-        return batch.Count();
-    }
-
-    public async Task<int> ProcessAdmin2CodeBatchAsync(IEnumerable<Admin2CodeRecord> batch, CancellationToken ct = default)
-    {
-        // Handle admin codes
-        return batch.Count();
-    }
-
-    public async Task<int> ProcessAlternateNamesV2BatchAsync(ICollection<AlternateNamesV2Record> batch, CancellationToken ct = default)
-    {
-        // Handle alternate names
-        return batch.Count;
-    }
-
-    public async Task<int> ProcessTimeZoneBatchAsync(ICollection<TimeZoneRecord> batch, CancellationToken ct = default)
-    {
-        // Handle time zones
-        return batch.Count;
-    }
-
-    public async Task<int> ProcessPostalCodeBatchAsync(IEnumerable<PostalCodeRecord> batch, CancellationToken ct = default)
-    {
-        // Handle postal codes
-        return batch.Count();
-    }
+    
+    // ... implement other methods ...
 }
+
+// Usage
+var processor = new MyDbProcessor();
+var result = await parser.ParseGeoNamesDataAsync("US", 
+    processor.ProcessGeoNameRecordAsync, 
+    processor.FinalizeGeoNameRecordAsync);
 ```
 
-### 2. Configure and Run
+### Dependency Injection
 
-You can configure the parser by manually instantiating it or by registering it in your Dependency Injection (DI) container.
-
-#### Option A: Manual Instantiation
+Register the parser in your `IServiceCollection`:
 
 ```csharp
-using Geonames.Parser;
-
-// Initialize your processor
-var processor = new CustomDataProcessor();
-
-// Create the parser instance
-var parser = new GeonamesParser(processor);
-
-// Example: Parse data for the United States (US)
-var result = await parser.ParseGeoNamesDataAsync("US");
-
-Console.WriteLine($"Processed {result.RecordsProcessed} records.");
-```
-
-#### Option B: Dependency Injection
-
-If you are using `Microsoft.Extensions.DependencyInjection` (e.g., in ASP.NET Core or a Worker Service), register the services as follows:
-
-```csharp
-using Geonames.Parser;
-using Geonames.Parser.Contract.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
-
 public void ConfigureServices(IServiceCollection services)
 {
-    // Register your custom data processor
-    services.AddSingleton<IDataProcessor, CustomDataProcessor>();
-
-    // Register the Geonames parser
-    services.AddTransient<IGeonamesParser, GeonamesParser>();
+    services.AddScoped<IGeonamesParser, GeonamesParser>();
 }
 ```
 
-> [!NOTE] The lifetime of `IGeonamesParser` depends on your implementation of `IDataProcessor`. 
-> Since `GeonamesParser` itself is stateless (holding only references to the processor and options), it can be registered as a **Singleton** if your `IDataProcessor` is also thread-safe or stateless.
-> Adjust the registration (Transient/Scoped/Singleton) to match the lifecycle requirements of your specific integration.
+## Advanced Filtering
+
+You can optimize processing by providing a filter predicate. Only records that match the filter will be passed to your processor.
 
 ```csharp
-// Usage in a service
-public class MyService
-{
-    private readonly IGeonamesParser _parser;
-
-    public MyService(IGeonamesParser parser)
-    {
-        _parser = parser;
-    }
-
-    public async Task RunAsync()
-    {
-        var result = await _parser.ParseGeoNamesDataAsync("US");
-    }
-}
+await parser.ParseGeoNamesDataAsync("US", 
+    recordProcessor: myHandler,
+    filter: record => record.FeatureClass == "P"); // Only populated places
 ```
 
-## Filtering Data
+## Performance
 
-You can pass a filter predicate to process only specific records, reducing unnecessary data handling.
+The library is optimized for large datasets (like `allCountries.txt`). It leverages:
+- **System.IO.Pipelines** for efficient I/O.
+- **StringPool** to minimize memory allocations for repeated strings.
+- **Span<char>** for parsing without unnecessary string allocations.
 
-```csharp
-var filter = new Func<GeonameRecord, bool>(record =>
-{
-    // Example: Only parsing populated places (P)
-    return record.FeatureClass == GeonamesFeatureClass.P;
-});
+## Benchmarks
 
-await parser.ParseGeoNamesDataAsync("US", filter);
+Run the benchmark project to see performance results on your machine:
+
+```bash
+dotnet run -c Release --project test/Geonames.Parser.Benchmarks -f net8.0 net9.0 net10.0
 ```
 
-## Extensibility
+## License
 
-The project is designed to be easily extensible. The core logic resides in `Geonames.Parser`, while contracts and models are in `Geonames.Parser.Contract`.
-
-- **Geonames.Parser**: Contains the main `GeonamesParser` class.
-- **Geonames.Parser.Contract**: Contains the `IDataProcessor` interface, data models (DTOs), and enums.
-
-To extend the functionality (e.g., adding support for new Geonames files), verify the stream parsing logic in the main parser class and add corresponding models in the contract library.
-
-## Performance Considerations
-
-The project `Geonames.Parser.Benchmarks` contains benchmarks for parsing large datasets. You can run these benchmarks to evaluate performance and identify bottlenecks.
-
-```csharp
-dotnet run -c Release -f net8.0 net9.0 net10.0
-```
+This project is licensed under the MIT License.

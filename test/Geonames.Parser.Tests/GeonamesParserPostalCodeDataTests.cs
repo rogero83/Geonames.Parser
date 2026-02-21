@@ -2,7 +2,6 @@ using Geonames.Parser.Contract.Abstractions;
 using Geonames.Parser.Contract.Models;
 using Geonames.Parser.Tests.Utility;
 using Moq;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -31,13 +30,15 @@ public class GeonamesParserPostalCodeDataTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessPostalCodeBatchAsync(It.IsAny<List<PostalCodeRecord>>(), ct))
-            .ReturnsAsync((List<PostalCodeRecord> batch, CancellationToken ct) => batch.Count);
+        mockProcessor.Setup(x => x.ProcessPostalCodeRecordAsync(It.IsAny<PostalCodeRecord>(), ct))
+            .ReturnsAsync((PostalCodeRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParsePostalCodeDataAsync(client, isoCode, true, null, ct);
+        var result = await parser.ParsePostalCodeDataAsync(client, isoCode, true,
+            mockProcessor.Object.ProcessPostalCodeRecordAsync,
+            null, null, ct);
 
         // Assert
         Assert.Equal(1, result.RecordsFound);
@@ -60,13 +61,16 @@ public class GeonamesParserPostalCodeDataTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessPostalCodeBatchAsync(It.IsAny<List<PostalCodeRecord>>(), ct))
-            .ReturnsAsync((List<PostalCodeRecord> batch, CancellationToken ct) => batch.Count);
+        mockProcessor.Setup(x => x.ProcessPostalCodeRecordAsync(It.IsAny<PostalCodeRecord>(), ct))
+            .ReturnsAsync((PostalCodeRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParsePostalCodeDataAsync(client, isoCode, true, null, ct);
+        var result = await parser.ParsePostalCodeDataAsync(client, isoCode, true,
+            mockProcessor.Object.ProcessPostalCodeRecordAsync,
+            null,
+            null, ct);
 
         // Assert
         Assert.Equal(1, result.RecordsFound);
@@ -92,10 +96,13 @@ public class GeonamesParserPostalCodeDataTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParsePostalCodeDataAsync(client, isoCode, true, null, ct);
+        var result = await parser.ParsePostalCodeDataAsync(client, isoCode, true,
+            mockProcessor.Object.ProcessPostalCodeRecordAsync,
+            null,
+            null, ct);
 
         // Assert
         Assert.Equal(0, result.RecordsProcessed);
@@ -118,13 +125,16 @@ public class GeonamesParserPostalCodeDataTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessPostalCodeBatchAsync(It.IsAny<List<PostalCodeRecord>>(), ct))
-            .ReturnsAsync((List<PostalCodeRecord> batch, CancellationToken ct) => batch.Count);
+        mockProcessor.Setup(x => x.ProcessPostalCodeRecordAsync(It.IsAny<PostalCodeRecord>(), ct))
+            .ReturnsAsync((PostalCodeRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParsePostalCodeDataAsync(client, isoCode, true, null, ct);
+        var result = await parser.ParsePostalCodeDataAsync(client, isoCode, true,
+            mockProcessor.Object.ProcessPostalCodeRecordAsync,
+            null,
+            null, ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound);
@@ -148,13 +158,16 @@ public class GeonamesParserPostalCodeDataTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessPostalCodeBatchAsync(It.IsAny<List<PostalCodeRecord>>(), ct))
-            .ReturnsAsync((List<PostalCodeRecord> batch, CancellationToken ct) => batch.Count);
+        mockProcessor.Setup(x => x.ProcessPostalCodeRecordAsync(It.IsAny<PostalCodeRecord>(), ct))
+            .ReturnsAsync((PostalCodeRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act - only Beverly Hills
-        var result = await parser.ParsePostalCodeDataAsync(client, isoCode, true, r => r.PostalCode == "90210", ct);
+        var result = await parser.ParsePostalCodeDataAsync(client, isoCode, true,
+            mockProcessor.Object.ProcessPostalCodeRecordAsync,
+            null,
+            r => r.PostalCode == "90210", ct);
 
         // Assert
         Assert.Equal(2, result.RecordsFound);
@@ -167,10 +180,13 @@ public class GeonamesParserPostalCodeDataTests
     {
         // Arrange
         var mockProcessor = new Mock<IDataProcessor>();
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParsePostalCodeDataAsync(new HttpClient(), "INVALID", true, null, ct);
+        var result = await parser.ParsePostalCodeDataAsync(new HttpClient(), "INVALID", true,
+            mockProcessor.Object.ProcessPostalCodeRecordAsync,
+            null,
+            null, ct);
 
         // Assert
         Assert.Equal(0, result.RecordsProcessed);
@@ -187,13 +203,16 @@ public class GeonamesParserPostalCodeDataTests
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content.ToString()));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessPostalCodeBatchAsync(It.IsAny<List<PostalCodeRecord>>(), ct))
-            .ReturnsAsync((List<PostalCodeRecord> batch, CancellationToken ct) => batch.Count);
+        mockProcessor.Setup(x => x.ProcessPostalCodeRecordAsync(It.IsAny<PostalCodeRecord>(), ct))
+            .ReturnsAsync((PostalCodeRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParsePostalCodeDataAsync(stream, null, ct);
+        var result = await parser.ParsePostalCodeDataAsync(stream,
+            mockProcessor.Object.ProcessPostalCodeRecordAsync,
+            null,
+            null, ct);
 
         // Assert
         Assert.Equal(1, result.RecordsFound);

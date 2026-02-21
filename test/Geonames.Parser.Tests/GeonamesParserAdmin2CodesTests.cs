@@ -2,7 +2,6 @@ using Geonames.Parser.Contract.Abstractions;
 using Geonames.Parser.Contract.Models;
 using Geonames.Parser.Tests.Utility;
 using Moq;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -29,13 +28,16 @@ public class GeonamesParserAdmin2CodesTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessAdmin2CodeBatchAsync(It.IsAny<IEnumerable<Admin2CodeRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<Admin2CodeRecord> batch, CancellationToken ct) => batch.Count());
+        mockProcessor.Setup(x => x.ProcessAdmin2CodeRecordAsync(It.IsAny<Admin2CodeRecord>(), ct))
+            .ReturnsAsync((Admin2CodeRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseAdmin2CodesAsync(client, null, ct);
+        var result = await parser.ParseAdmin2CodesAsync(client,
+            mockProcessor.Object.ProcessAdmin2CodeRecordAsync,
+            mockProcessor.Object.FinalizeAdmin2CodeRecordAsync,
+            null, ct);
 
         // Assert
         Assert.Equal(2, result.RecordsFound);
@@ -57,13 +59,16 @@ public class GeonamesParserAdmin2CodesTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessAdmin2CodeBatchAsync(It.IsAny<IEnumerable<Admin2CodeRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<Admin2CodeRecord> batch, CancellationToken ct) => batch.Count());
+        mockProcessor.Setup(x => x.ProcessAdmin2CodeRecordAsync(It.IsAny<Admin2CodeRecord>(), ct))
+            .ReturnsAsync((Admin2CodeRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseAdmin2CodesAsync(client, ct: TestContext.Current.CancellationToken);
+        var result = await parser.ParseAdmin2CodesAsync(client,
+            mockProcessor.Object.ProcessAdmin2CodeRecordAsync,
+            mockProcessor.Object.FinalizeAdmin2CodeRecordAsync,
+            ct: ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound);
@@ -86,15 +91,17 @@ public class GeonamesParserAdmin2CodesTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessAdmin2CodeBatchAsync(It.IsAny<IEnumerable<Admin2CodeRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<Admin2CodeRecord> batch, CancellationToken ct) => batch.Count());
+        mockProcessor.Setup(x => x.ProcessAdmin2CodeRecordAsync(It.IsAny<Admin2CodeRecord>(), ct))
+            .ReturnsAsync((Admin2CodeRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act - only include CA codes
         var result = await parser.ParseAdmin2CodesAsync(client,
+            mockProcessor.Object.ProcessAdmin2CodeRecordAsync,
+            mockProcessor.Object.FinalizeAdmin2CodeRecordAsync,
             r => r.Code.Contains("US.CA"),
-            TestContext.Current.CancellationToken);
+            ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound);

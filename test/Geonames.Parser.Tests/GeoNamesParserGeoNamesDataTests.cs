@@ -2,7 +2,6 @@ using Geonames.Parser.Contract.Abstractions;
 using Geonames.Parser.Contract.Models;
 using Geonames.Parser.Tests.Utility;
 using Moq;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -32,13 +31,15 @@ public class GeoNamesParserGeoNamesDataTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessGeoNameBatchAsync(It.IsAny<List<GeonameRecord>>(), ct))
-            .ReturnsAsync((List<GeonameRecord> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessGeoNameRecordAsync(It.IsAny<GeonameRecord>(), ct))
+            .ReturnsAsync(() => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseGeoNamesDataAsync(client, isoCode, null, ct);
+        var result = await parser.ParseGeoNamesDataAsync(client, isoCode,
+            mockProcessor.Object.ProcessGeoNameRecordAsync,
+            null, null, ct);
 
         // Assert
         Assert.Equal(1, result.RecordsFound);
@@ -66,10 +67,11 @@ public class GeoNamesParserGeoNamesDataTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseGeoNamesDataAsync(client, isoCode, null, ct);
+        var result = await parser.ParseGeoNamesDataAsync(client, isoCode, mockProcessor.Object.ProcessGeoNameRecordAsync,
+            null, null, ct);
 
         // Assert
         Assert.Equal(0, result.RecordsProcessed);
@@ -93,13 +95,14 @@ public class GeoNamesParserGeoNamesDataTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessGeoNameBatchAsync(It.IsAny<List<GeonameRecord>>(), ct))
-            .ReturnsAsync((List<GeonameRecord> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessGeoNameRecordAsync(It.IsAny<GeonameRecord>(), ct))
+            .ReturnsAsync(() => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseGeoNamesDataAsync(client, isoCode, null, ct);
+        var result = await parser.ParseGeoNamesDataAsync(client, isoCode, mockProcessor.Object.ProcessGeoNameRecordAsync,
+            null, null, ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound);
@@ -124,13 +127,14 @@ public class GeoNamesParserGeoNamesDataTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessGeoNameBatchAsync(It.IsAny<List<GeonameRecord>>(), ct))
-            .ReturnsAsync((List<GeonameRecord> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessGeoNameRecordAsync(It.IsAny<GeonameRecord>(), ct))
+            .ReturnsAsync(() => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act - only include NY records
-        var result = await parser.ParseGeoNamesDataAsync(client, isoCode, r => r.Admin1Code == "NY", ct);
+        var result = await parser.ParseGeoNamesDataAsync(client, isoCode, mockProcessor.Object.ProcessGeoNameRecordAsync,
+            null, r => r.Admin1Code == "NY", ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound);
@@ -144,10 +148,11 @@ public class GeoNamesParserGeoNamesDataTests
     {
         // Arrange
         var mockProcessor = new Mock<IDataProcessor>();
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseGeoNamesDataAsync((HttpClient)null, "INVALID", null, ct);
+        var result = await parser.ParseGeoNamesDataAsync((HttpClient)null, "INVALID", mockProcessor.Object.ProcessGeoNameRecordAsync,
+            null, null, ct);
 
         // Assert
         Assert.Equal(0, result.RecordsProcessed);
@@ -169,13 +174,14 @@ public class GeoNamesParserGeoNamesDataTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessGeoNameBatchAsync(It.IsAny<IEnumerable<GeonameRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<GeonameRecord> b, CancellationToken ct) => b.Count());
+        mockProcessor.Setup(x => x.ProcessGeoNameRecordAsync(It.IsAny<GeonameRecord>(), ct))
+            .ReturnsAsync(() => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseGeoNamesDataAsync(client, isoCode, null, ct);
+        var result = await parser.ParseGeoNamesDataAsync(client, isoCode, mockProcessor.Object.ProcessGeoNameRecordAsync,
+            null, null, ct);
 
         // Assert
         Assert.Equal(2, result.RecordsTotal);
@@ -201,13 +207,14 @@ public class GeoNamesParserGeoNamesDataTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessGeoNameBatchAsync(It.IsAny<List<GeonameRecord>>(), ct))
-            .ReturnsAsync((List<GeonameRecord> b, System.Threading.CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessGeoNameRecordAsync(It.IsAny<GeonameRecord>(), ct))
+            .ReturnsAsync(() => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseGeoNamesDataAsync(client, isoCode, null, ct);
+        var result = await parser.ParseGeoNamesDataAsync(client, isoCode, mockProcessor.Object.ProcessGeoNameRecordAsync,
+            null, null, ct);
 
         // Assert
         Assert.Equal(1, result.RecordsFound);

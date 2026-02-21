@@ -1,5 +1,4 @@
-﻿using Geonames.Parser.Contract;
-using Geonames.Parser.Contract.Abstractions;
+﻿using Geonames.Parser.Contract.Abstractions;
 using Geonames.Parser.Contract.Models;
 using Geonames.Parser.Contract.Utility;
 using Geonames.Parser.RowParsers;
@@ -8,105 +7,134 @@ using System.IO.Compression;
 namespace Geonames.Parser;
 
 /// <inheritdoc/>
-public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions? options = null)
+public class GeonamesParser()
     : IGeonamesParser
 {
-    private readonly IDataProcessor _dataProcessor = dataProcessor;
-    private readonly GeonamesParserOptions _options = options ?? GeonamesParserOptions.Default;
-
     #region Country Info Parser
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseCountryInfoAsync(Func<CountryInfoRecord, bool>? filter = null, CancellationToken ct = default)
+    public async Task<ParserResult> ParseCountryInfoAsync(
+        Func<CountryInfoRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<CountryInfoRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return await ParseCountryInfoAsync(new HttpClient(), filter, ct);
+        return await ParseCountryInfoAsync(new HttpClient(), recordProcessor, finalizeProcessor,
+            filter, ct);
     }
 
     /// <inheritdoc/>
     public async Task<ParserResult> ParseCountryInfoAsync(HttpClient systemHttpClient,
+        Func<CountryInfoRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
         Func<CountryInfoRecord, bool>? filter = null, CancellationToken ct = default)
     {
         using var httpClient = systemHttpClient;
         using var stream = await httpClient.GetStreamAsync(GeonamesUri.CountryInfoUrl, ct);
-        return await ParseCountryInfoAsync(stream, filter, ct);
+        return await ParseCountryInfoAsync(stream, recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
     public Task<ParserResult> ParseCountryInfoAsync(Stream stream,
+        Func<CountryInfoRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
         Func<CountryInfoRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return PipeReadAsync.ParseStream(
+        return PipeReadGenericAsync.ParseStream(
             stream,
             RowParser.CountryInfo,
-            _dataProcessor.ProcessCountryInfoBatchAsync,
+            recordProcessor,
+            finalizeProcessor,
             filter,
-            _options.ProcessingBatchSize,
             ct);
     }
     #endregion Country Info Parser
 
     #region Admin Codes Parser
     /// <inheritdoc/>
-    public Task<ParserResult> ParseAdmin1CodesAsync(Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParseAdmin1CodesAsync(
+        Func<Admin1CodeRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return ParseAdmin1CodesAsync(new HttpClient(), filter, ct);
+        return ParseAdmin1CodesAsync(new HttpClient(), recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseAdmin1CodesAsync(HttpClient systemHttpClient, Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default)
+    public async Task<ParserResult> ParseAdmin1CodesAsync(HttpClient systemHttpClient,
+        Func<Admin1CodeRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
         using var httpClient = systemHttpClient;
         using var stream = await httpClient.GetStreamAsync(GeonamesUri.Admin1CodesUrl, ct);
-        return await ParseAdmin1CodesAsync(stream, filter, ct);
+        return await ParseAdmin1CodesAsync(stream, recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
-    public Task<ParserResult> ParseAdmin1CodesAsync(Stream stream, Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParseAdmin1CodesAsync(Stream stream,
+        Func<Admin1CodeRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<Admin1CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return PipeReadAsync.ParseStream(
+        return PipeReadGenericAsync.ParseStream(
             stream,
             RowParser.Admin1Code,
-            _dataProcessor.ProcessAdmin1CodeBatchAsync,
+            recordProcessor,
+            finalizeProcessor,
             filter,
-            _options.ProcessingBatchSize,
             ct);
     }
 
     /// <inheritdoc/>
-    public Task<ParserResult> ParseAdmin2CodesAsync(Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParseAdmin2CodesAsync(
+        Func<Admin2CodeRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return ParseAdmin2CodesAsync(new HttpClient(), filter, ct);
+        return ParseAdmin2CodesAsync(new HttpClient(), recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseAdmin2CodesAsync(HttpClient systemHttpClient, Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default)
+    public async Task<ParserResult> ParseAdmin2CodesAsync(HttpClient systemHttpClient,
+        Func<Admin2CodeRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
         using var httpClient = systemHttpClient;
         using var stream = await httpClient.GetStreamAsync(GeonamesUri.Admin2CodesUrl, ct);
-        return await ParseAdmin2CodesAsync(stream, filter, ct);
+        return await ParseAdmin2CodesAsync(stream, recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
-    public Task<ParserResult> ParseAdmin2CodesAsync(Stream stream, Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParseAdmin2CodesAsync(Stream stream,
+        Func<Admin2CodeRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<Admin2CodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return PipeReadAsync.ParseStream(
+        return PipeReadGenericAsync.ParseStream(
             stream,
             RowParser.Admin2Code,
-            _dataProcessor.ProcessAdmin2CodeBatchAsync,
+            recordProcessor,
+            finalizeProcessor,
             filter,
-            _options.ProcessingBatchSize,
             ct);
     }
     #endregion Admin Codes Parser
 
     #region Geonames Parser
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseGeoNamesDataAsync(string isoCode, Func<GeonameRecord, bool>? filter = null, CancellationToken ct = default)
+    public async Task<ParserResult> ParseGeoNamesDataAsync(string isoCode,
+        Func<GeonameRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<GeonameRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return await ParseGeoNamesDataAsync(new HttpClient(), isoCode, filter, ct);
+        return await ParseGeoNamesDataAsync(new HttpClient(), isoCode, recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseGeoNamesDataAsync(HttpClient systemHttpClient, string isoCode, Func<GeonameRecord, bool>? filter = null, CancellationToken ct = default)
+    public async Task<ParserResult> ParseGeoNamesDataAsync(HttpClient systemHttpClient, string isoCode,
+        Func<GeonameRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<GeonameRecord, bool>? filter = null, CancellationToken ct = default)
     {
         isoCode = isoCode.ToUpperInvariant();
         if (string.IsNullOrWhiteSpace(isoCode)
@@ -125,35 +153,46 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
         var txtEntry = archive.Entries.FirstOrDefault(entry => entry.Name == $"{isoCode}.txt");
         if (txtEntry == null)
             return ParserResult.Error($"No .txt file found for ISO code: {isoCode}");
-
+#if NET10_0_OR_GREATER
+        using var entryStream = await txtEntry.OpenAsync(ct);
+#else
         using var entryStream = txtEntry.Open();
-        return await ParseGeoNamesDataAsync(entryStream, filter, ct);
+#endif
+        return await ParseGeoNamesDataAsync(entryStream, recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
     public Task<ParserResult> ParseGeoNamesDataAsync(Stream stream,
+        Func<GeonameRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
         Func<GeonameRecord, bool>? filter = null,
         CancellationToken ct = default)
     {
-        return PipeReadAsync.ParseStream(
+        return PipeReadGenericAsync.ParseStream(
             stream,
             RowParser.Geonames,
-            _dataProcessor.ProcessGeoNameBatchAsync,
+            recordProcessor,
+            finalizeProcessor,
             filter,
-            _options.ProcessingBatchSize,
             ct);
     }
     #endregion Geonames Parser
 
     #region AlternaticeNamveV2 Parser
     /// <inheritdoc/>
-    public Task<ParserResult> ParseAlternateNamesV2DataAsync(string isoCode, Func<AlternateNamesV2Record, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParseAlternateNamesV2DataAsync(string isoCode,
+        Func<AlternateNamesV2Record, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<AlternateNamesV2Record, bool>? filter = null, CancellationToken ct = default)
     {
-        return ParseAlternateNamesV2DataAsync(new HttpClient(), isoCode, filter, ct);
+        return ParseAlternateNamesV2DataAsync(new HttpClient(), isoCode, recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseAlternateNamesV2DataAsync(HttpClient systemHttpClient, string isoCode, Func<AlternateNamesV2Record, bool>? filter = null, CancellationToken ct = default)
+    public async Task<ParserResult> ParseAlternateNamesV2DataAsync(HttpClient systemHttpClient, string isoCode,
+        Func<AlternateNamesV2Record, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<AlternateNamesV2Record, bool>? filter = null, CancellationToken ct = default)
     {
         isoCode = isoCode?.ToUpperInvariant() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(isoCode)
@@ -182,74 +221,101 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
             return ParserResult.Error($"No .txt file found for ISO code: {isoCode}");
         }
 
+#if NET10_0_OR_GREATER
+        using var entryStream = await txtEntry.OpenAsync(ct);
+#else
         using var entryStream = txtEntry.Open();
-        return await ParseAlternateNamesV2DataAsync(entryStream, filter, ct);
+# endif        
+        return await ParseAlternateNamesV2DataAsync(entryStream, recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
     public Task<ParserResult> ParseAlternateNamesV2DataAsync(Stream stream,
+        Func<AlternateNamesV2Record, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
         Func<AlternateNamesV2Record, bool>? filter = null,
         CancellationToken ct = default)
     {
-        return PipeReadAsync.ParseStream(
+        return PipeReadGenericAsync.ParseStream(
             stream,
             RowParser.AlternateNameV2,
-            _dataProcessor.ProcessAlternateNamesV2BatchAsync,
+            recordProcessor,
+            finalizeProcessor,
             filter,
-            _options.ProcessingBatchSize,
             ct);
     }
     #endregion AlternaticeNamveV2 Parser
 
     #region TimeZone Parser
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseTimeZoneDataAsync(Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default)
+    public async Task<ParserResult> ParseTimeZoneDataAsync(
+        Func<TimeZoneRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return await ParseTimeZoneDataAsync(new HttpClient(), filter, ct);
+        return await ParseTimeZoneDataAsync(new HttpClient(), recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
-    public async Task<ParserResult> ParseTimeZoneDataAsync(HttpClient systemHttpClient, Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default)
+    public async Task<ParserResult> ParseTimeZoneDataAsync(HttpClient systemHttpClient,
+        Func<TimeZoneRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default)
     {
         using var httpClient = systemHttpClient;
         using var stream = await httpClient.GetStreamAsync(GeonamesUri.TimeZoneUrl, ct);
-        return await ParseTimeZoneDataAsync(stream, filter, ct);
+        return await ParseTimeZoneDataAsync(stream, recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
-    public Task<ParserResult> ParseTimeZoneDataAsync(Stream stream, Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParseTimeZoneDataAsync(Stream stream,
+        Func<TimeZoneRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<TimeZoneRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return PipeReadAsync.ParseStream(
+        return PipeReadGenericAsync.ParseStream(
             stream,
             RowParser.TimeZone,
-            _dataProcessor.ProcessTimeZoneBatchAsync,
+            recordProcessor,
+            finalizeProcessor,
             filter,
-            _options.ProcessingBatchSize,
             ct);
     }
     #endregion TimeZone Parser
 
     #region Postal Code Parser
     /// <inheritdoc/>
-    public Task<ParserResult> ParsePostalCodeDataAsync(string isoCode, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParsePostalCodeDataAsync(string isoCode,
+        Func<PostalCodeRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return ParsePostalCodeDataAsync(new HttpClient(), isoCode, filter, ct);
+        return ParsePostalCodeDataAsync(new HttpClient(), isoCode, recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
-    public Task<ParserResult> ParsePostalCodeDataAsync(string isoCode, bool full, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParsePostalCodeDataAsync(string isoCode, bool full,
+        Func<PostalCodeRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return ParsePostalCodeDataAsync(new HttpClient(), isoCode, full, filter, ct);
+        return ParsePostalCodeDataAsync(new HttpClient(), isoCode, full, recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
-    public Task<ParserResult> ParsePostalCodeDataAsync(HttpClient systemHttpClient, string isoCode, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParsePostalCodeDataAsync(HttpClient systemHttpClient, string isoCode,
+        Func<PostalCodeRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return ParsePostalCodeDataAsync(systemHttpClient, isoCode, true, filter, ct);
+        return ParsePostalCodeDataAsync(systemHttpClient, isoCode, true, recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
-    public async Task<ParserResult> ParsePostalCodeDataAsync(HttpClient systemHttpClient, string isoCode, bool full = true, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
+    public async Task<ParserResult> ParsePostalCodeDataAsync(HttpClient systemHttpClient, string isoCode, bool full,
+        Func<PostalCodeRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
         isoCode = isoCode.ToUpperInvariant();
         if (string.IsNullOrWhiteSpace(isoCode)
@@ -272,23 +338,27 @@ public class GeonamesParser(IDataProcessor dataProcessor, GeonamesParserOptions?
         if (txtEntry == null)
             return ParserResult.Error($"No .txt file found for ISO code: {isoCode}");
 
+#if NET10_0_OR_GREATER
+        using var entryStream = await txtEntry.OpenAsync(ct);
+#else
         using var entryStream = txtEntry.Open();
-
-        return await ParsePostalCodeDataAsync(entryStream, filter, ct);
+#endif
+        return await ParsePostalCodeDataAsync(entryStream, recordProcessor, finalizeProcessor, filter, ct);
     }
 
     /// <inheritdoc/>
-    public Task<ParserResult> ParsePostalCodeDataAsync(Stream stream, Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
+    public Task<ParserResult> ParsePostalCodeDataAsync(Stream stream,
+        Func<PostalCodeRecord, CancellationToken, Task<int>> recordProcessor,
+        Func<CancellationToken, Task<int>>? finalizeProcessor = null,
+        Func<PostalCodeRecord, bool>? filter = null, CancellationToken ct = default)
     {
-        return PipeReadAsync.ParseStream(
+        return PipeReadGenericAsync.ParseStream(
             stream,
             RowParser.PostalCode,
-            _dataProcessor.ProcessPostalCodeBatchAsync,
+            recordProcessor,
+            finalizeProcessor,
             filter,
-            _options.ProcessingBatchSize,
             ct);
     }
     #endregion Postal Code Parser
-
-
 }

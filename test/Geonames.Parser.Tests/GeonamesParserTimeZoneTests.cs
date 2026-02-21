@@ -2,7 +2,6 @@ using Geonames.Parser.Contract.Abstractions;
 using Geonames.Parser.Contract.Models;
 using Geonames.Parser.Tests.Utility;
 using Moq;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -28,13 +27,16 @@ public class GeonamesParserTimeZoneTests
         using var ms = new MemoryStream(Encoding.UTF8.GetBytes(content.ToString()));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessTimeZoneBatchAsync(It.IsAny<IEnumerable<TimeZoneRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<TimeZoneRecord> b, CancellationToken ct) => b.Count());
+        mockProcessor.Setup(x => x.ProcessTimeZoneRecordAsync(It.IsAny<TimeZoneRecord>(), ct))
+            .ReturnsAsync((TimeZoneRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseTimeZoneDataAsync(ms, null, ct);
+        var result = await parser.ParseTimeZoneDataAsync(ms,
+            mockProcessor.Object.ProcessTimeZoneRecordAsync,
+            null,
+            null, ct);
 
         // Assert
         Assert.Equal(2, result.RecordsFound);
@@ -55,13 +57,16 @@ public class GeonamesParserTimeZoneTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessTimeZoneBatchAsync(It.IsAny<IEnumerable<TimeZoneRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<TimeZoneRecord> b, CancellationToken ct) => b.Count());
+        mockProcessor.Setup(x => x.ProcessTimeZoneRecordAsync(It.IsAny<TimeZoneRecord>(), ct))
+            .ReturnsAsync((TimeZoneRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseTimeZoneDataAsync(client, null, ct);
+        var result = await parser.ParseTimeZoneDataAsync(client,
+            mockProcessor.Object.ProcessTimeZoneRecordAsync,
+            null,
+            null, ct);
 
         // Assert
         Assert.Equal(1, result.RecordsFound);
@@ -81,13 +86,16 @@ public class GeonamesParserTimeZoneTests
         using var ms = new MemoryStream(Encoding.UTF8.GetBytes(content.ToString()));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessTimeZoneBatchAsync(It.IsAny<List<TimeZoneRecord>>(), ct))
-            .ReturnsAsync((List<TimeZoneRecord> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessTimeZoneRecordAsync(It.IsAny<TimeZoneRecord>(), ct))
+            .ReturnsAsync((TimeZoneRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act - only include AE records
-        var result = await parser.ParseTimeZoneDataAsync(ms, r => r.CountryCode == "AE", ct);
+        var result = await parser.ParseTimeZoneDataAsync(ms,
+            mockProcessor.Object.ProcessTimeZoneRecordAsync,
+            null,
+            r => r.CountryCode == "AE", ct);
 
         // Assert
         Assert.Equal(2, result.RecordsFound);
@@ -108,13 +116,15 @@ public class GeonamesParserTimeZoneTests
         using var ms = new MemoryStream(Encoding.UTF8.GetBytes(content.ToString()));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessTimeZoneBatchAsync(It.IsAny<List<TimeZoneRecord>>(), ct))
-            .ReturnsAsync((List<TimeZoneRecord> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessTimeZoneRecordAsync(It.IsAny<TimeZoneRecord>(), ct))
+            .ReturnsAsync((TimeZoneRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseTimeZoneDataAsync(ms, null, ct);
+        var result = await parser.ParseTimeZoneDataAsync(ms,
+            mockProcessor.Object.ProcessTimeZoneRecordAsync,
+            null, null, ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound);
@@ -137,13 +147,16 @@ public class GeonamesParserTimeZoneTests
         using var ms = new MemoryStream(Encoding.UTF8.GetBytes(content.ToString()));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessTimeZoneBatchAsync(It.IsAny<List<TimeZoneRecord>>(), ct))
-            .ReturnsAsync((List<TimeZoneRecord> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessTimeZoneRecordAsync(It.IsAny<TimeZoneRecord>(), ct))
+            .ReturnsAsync((TimeZoneRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseTimeZoneDataAsync(ms, null, ct);
+        var result = await parser.ParseTimeZoneDataAsync(ms,
+            mockProcessor.Object.ProcessTimeZoneRecordAsync,
+            null,
+            null, ct);
 
         // Assert
         Assert.Equal(1, result.RecordsFound);

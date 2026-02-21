@@ -6,7 +6,7 @@ using Geonames.Parser.Contract.Models;
 Console.WriteLine("Geonames Test Console");
 
 IDataProcessor processor = new ConsoleDataProcessor();
-var parser = new GeonamesParser(processor);
+var parser = new GeonamesParser();
 
 ParserResult? result = null;
 while (true)
@@ -23,54 +23,18 @@ while (true)
 
     try
     {
-        if (selectedOption == "1")
+        result = selectedOption switch
         {
-            result = await parser.ParseCountryInfoAsync();
-        }
-        else if (selectedOption == "2")
-        {
-            result = await TestingGeonamesParser(parser, result);
-        }
-        else if (selectedOption == "3")
-        {
-            result = await TestingAlternateNameV2Parser(parser, result);
-        }
-        else if (selectedOption == "4")
-        {
-            var admin1Filter = new Func<Admin1CodeRecord, bool>(record =>
-            {
-                return record.CountryCode == "US";
-            });
-
-            result = await parser.ParseAdmin1CodesAsync(admin1Filter);
-        }
-        else if (selectedOption == "5")
-        {
-            var admin1Filter = new Func<Admin2CodeRecord, bool>(record =>
-            {
-                return record.CountryCode == "US" && record.Admin1Code == "AL";
-            });
-
-            result = await parser.ParseAdmin2CodesAsync(admin1Filter);
-        }
-        else if (selectedOption == "6")
-        {
-            var admin1Filter = new Func<TimeZoneRecord, bool>(record =>
-            {
-                return record.CountryCode.StartsWith('I');
-            });
-
-            result = await parser.ParseTimeZoneDataAsync(admin1Filter);
-        }
-        else if (selectedOption == "7")
-        {
-            result = await TestingPostalCode(parser, result);
-        }
-        else
-        {
-            Console.WriteLine("Invalid option selected.");
-            break;
-        }
+            "1" => await parser.ParseCountryInfoAsync(processor.ProcessCountryInfoRecordAsync,
+                                            processor.FinalizeCountryInfoRecordAsync),
+            "2" => await TestingGeonamesParser(parser),
+            "3" => await TestingAlternateNameV2Parser(parser),
+            "4" => await TestingAdmin1Parser(processor, parser),
+            "5" => await TestingAdmin2Parser(processor, parser),
+            "6" => await TestingTimeZoneParser(processor, parser),
+            "7" => await TestingPostalCode(parser),
+            _ => null
+        };
 
         if (result == null)
         {
@@ -99,35 +63,34 @@ while (true)
     }
 }
 
-static async Task<ParserResult> TestingGeonamesParser(
-    IGeonamesParser parser,
-    ParserResult? result)
+async Task<ParserResult> TestingGeonamesParser(
+    IGeonamesParser parser)
 {
     Console.Write("Insert ISO code or 'ALL' : ");
     var isoCode = Console.ReadLine() ?? string.Empty;
 
     Func<GeonameRecord, bool>? filter = null;
 
-    //var filter = new Func<GeonameRecord, bool>(record =>
-    //{
-    //    // Example filter: Only include records with a population greater than 1000
-    //    return record.FeatureClass == GeoNamesFeatureClass.P;
-    //});
+    ////var filter = new Func<GeonameRecord, bool>(record =>
+    ////{
+    ////    return record.FeatureCode == Geonames.Parser.Contract.Enums.GeonamesFeatureCode.ADM3;
+    ////});
 
-    //var filter = new Func<GeonameRecord, bool>(record =>
-    //{
-    //    return record.FeatureCode.HasValue
-    //        && LocalizationFeatureCodes.PopulatedPlaces.Primary.Contains(record.FeatureCode.Value);
-    //});
+    ////var filter = new Func<GeonameRecord, bool>(record =>
+    ////{
+    ////    return record.FeatureCode.HasValue
+    ////        && LocalizationFeatureCodes.PopulatedPlaces.Primary.Contains(record.FeatureCode.Value);
+    ////});
 
-    result = await parser.ParseGeoNamesDataAsync(isoCode, filter);
+    result = await parser.ParseGeoNamesDataAsync(isoCode,
+        processor.ProcessGeoNameRecordAsync,
+        processor.FinalizeGeoNameRecordAsync,
+        filter);
 
     return result;
 }
 
-static async Task<ParserResult?> TestingAlternateNameV2Parser(
-    IGeonamesParser parser,
-    ParserResult? result)
+async Task<ParserResult?> TestingAlternateNameV2Parser(IGeonamesParser parser)
 {
     Console.Write("Insert ISO code or 'ALL' : ");
     var isoCode = Console.ReadLine() ?? string.Empty;
@@ -137,17 +100,20 @@ static async Task<ParserResult?> TestingAlternateNameV2Parser(
         return !string.IsNullOrEmpty(record.IsoLanguage) && record.IsoLanguage.Length == 2;
     });
 
-    //var filters = new Func<AlternateNamesV2Record, bool>(record =>
-    //{
-    //    return record.From.HasValue || record.To.HasValue;
-    //});
+    ////var filters = new Func<AlternateNamesV2Record, bool>(record =>
+    ////{
+    ////    return record.From.HasValue || record.To.HasValue;
+    ////});
 
-    result = await parser.ParseAlternateNamesV2DataAsync(isoCode, filters);
+    result = await parser.ParseAlternateNamesV2DataAsync(isoCode,
+        processor.ProcessAlternateNamesV2RecordAsync,
+        processor.FinalizeAlternateNamesV2RecordAsync,
+        filter: filters);
 
     return result;
 }
 
-static async Task<ParserResult?> TestingPostalCode(GeonamesParser parser, ParserResult? result)
+async Task<ParserResult?> TestingPostalCode(GeonamesParser parser)
 {
     Console.Write("Insert ISO code or 'ALL' ");
     var isoCode = Console.ReadLine() ?? string.Empty;
@@ -157,6 +123,48 @@ static async Task<ParserResult?> TestingPostalCode(GeonamesParser parser, Parser
         return true; // Example filter: Include all records
     });
 
-    result = await parser.ParsePostalCodeDataAsync(isoCode, filter);
+    result = await parser.ParsePostalCodeDataAsync(isoCode,
+        processor.ProcessPostalCodeRecordAsync,
+        processor.FinalizePostalCodeRecordAsync,
+        filter: filter);
+    return result;
+}
+
+static async Task<ParserResult?> TestingAdmin1Parser(IDataProcessor processor, GeonamesParser parser)
+{
+    var admin1Filter = new Func<Admin1CodeRecord, bool>(record =>
+    {
+        return record.CountryCode == "US";
+    });
+
+    var result = await parser.ParseAdmin1CodesAsync(processor.ProcessAdmin1CodeRecordAsync,
+        processor.FinalizeAdmin1CodeRecordAsync,
+        filter: admin1Filter);
+    return result;
+}
+
+static async Task<ParserResult?> TestingAdmin2Parser(IDataProcessor processor, GeonamesParser parser)
+{
+    var admin1Filter = new Func<Admin2CodeRecord, bool>(record =>
+    {
+        return record.CountryCode == "US" && record.Admin1Code == "AL";
+    });
+
+    var result = await parser.ParseAdmin2CodesAsync(processor.ProcessAdmin2CodeRecordAsync,
+        processor.FinalizeAdmin2CodeRecordAsync,
+        filter: admin1Filter);
+    return result;
+}
+
+static async Task<ParserResult?> TestingTimeZoneParser(IDataProcessor processor, GeonamesParser parser)
+{
+    var timeZoneFilter = new Func<TimeZoneRecord, bool>(record =>
+    {
+        return record.CountryCode.StartsWith('I');
+    });
+
+    var result = await parser.ParseTimeZoneDataAsync(processor.ProcessTimeZoneRecordAsync,
+        processor.FinalizeTimeZoneRecordAsync,
+        filter: timeZoneFilter);
     return result;
 }
