@@ -1,9 +1,7 @@
-using Geonames.Parser.Contract;
 using Geonames.Parser.Contract.Abstractions;
 using Geonames.Parser.Contract.Models;
 using Geonames.Parser.Tests.Utility;
 using Moq;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -30,13 +28,16 @@ public class GeoNamesParserCountryInfoTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<IEnumerable<CountryInfoRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<CountryInfoRecord> b, CancellationToken ct) => b.Count(x => x != null));
+        mockProcessor.Setup(x => x.ProcessCountryInfoRecordAsync(It.IsAny<CountryInfoRecord>(), ct))
+            .ReturnsAsync((CountryInfoRecord b, CancellationToken ct) => b != null ? 1 : 0);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseCountryInfoAsync(client, null, ct);
+        var result = await parser.ParseCountryInfoAsync(client,
+            mockProcessor.Object.ProcessCountryInfoRecordAsync,
+            mockProcessor.Object.FinalizeCountryInfoRecordAsync,
+            ct: ct);
 
         // Assert
         Assert.Equal(2, result.RecordsFound);
@@ -59,13 +60,16 @@ public class GeoNamesParserCountryInfoTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<IEnumerable<CountryInfoRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<CountryInfoRecord> b, CancellationToken ct) => b.Count(x => x != null));
+        mockProcessor.Setup(x => x.ProcessCountryInfoRecordAsync(It.IsAny<CountryInfoRecord>(), ct))
+            .ReturnsAsync((CountryInfoRecord b, CancellationToken ct) => b != null ? 1 : 0);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseCountryInfoAsync(client, null, ct);
+        var result = await parser.ParseCountryInfoAsync(client,
+            mockProcessor.Object.ProcessCountryInfoRecordAsync,
+            mockProcessor.Object.FinalizeCountryInfoRecordAsync,
+            ct: ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound);
@@ -88,13 +92,16 @@ public class GeoNamesParserCountryInfoTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<IEnumerable<CountryInfoRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<CountryInfoRecord> b, CancellationToken ct) => b.Count(x => x != null));
+        mockProcessor.Setup(x => x.ProcessCountryInfoRecordAsync(It.IsAny<CountryInfoRecord>(), ct))
+            .ReturnsAsync((CountryInfoRecord b, CancellationToken ct) => b != null ? 1 : 0);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act - only include NA continent
-        var result = await parser.ParseCountryInfoAsync(client, r => r.Continent == "NA", ct);
+        var result = await parser.ParseCountryInfoAsync(client,
+            mockProcessor.Object.ProcessCountryInfoRecordAsync,
+            mockProcessor.Object.FinalizeCountryInfoRecordAsync,
+            r => r.Continent == "NA", ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound);
@@ -116,13 +123,15 @@ public class GeoNamesParserCountryInfoTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<IEnumerable<CountryInfoRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<CountryInfoRecord> b, CancellationToken ct) => b.Count(x => x != null));
+        mockProcessor.Setup(x => x.ProcessCountryInfoRecordAsync(It.IsAny<CountryInfoRecord>(), ct))
+            .ReturnsAsync((CountryInfoRecord b, CancellationToken ct) => b != null ? 1 : 0);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseCountryInfoAsync(client, null, ct);
+        var result = await parser.ParseCountryInfoAsync(client,
+            mockProcessor.Object.ProcessCountryInfoRecordAsync,
+            mockProcessor.Object.FinalizeCountryInfoRecordAsync, null, ct);
 
         // Assert
         Assert.Equal(1, result.RecordsFound);
@@ -141,13 +150,16 @@ public class GeoNamesParserCountryInfoTests
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content.ToString()));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<IEnumerable<CountryInfoRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<CountryInfoRecord> b, CancellationToken ct) => b.Count(x => x != null));
+        mockProcessor.Setup(x => x.ProcessCountryInfoRecordAsync(It.IsAny<CountryInfoRecord>(), ct))
+            .ReturnsAsync((CountryInfoRecord b, CancellationToken ct) => b != null ? 1 : 0);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseCountryInfoAsync(stream, null, ct);
+        var result = await parser.ParseCountryInfoAsync(stream,
+            mockProcessor.Object.ProcessCountryInfoRecordAsync,
+            mockProcessor.Object.FinalizeCountryInfoRecordAsync,
+            ct: ct);
 
         // Assert
         Assert.Equal(1, result.RecordsFound);
@@ -159,8 +171,7 @@ public class GeoNamesParserCountryInfoTests
     [Fact]
     public async Task ParseCountryInfoAsync_WithCustomBatchSize_ProcessesCorrectly()
     {
-        // Arrange
-        var settings = new GeonamesParserOptions { ProcessingBatchSize = 2 };
+        // Arrange        
         var content = new StringBuilder();
         content.AppendLine("US\tUSA\t840\tUS\tUnited States\tWashington\t9629091\t331002651\tNA\t.us\tUSD\tDollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-US,es-MX\t6252001\tCA,MX\t");
         content.AppendLine("CA\tCAN\t124\tCA\tCanada\tOttawa\t9629091\t38005238\tNA\t.ca\tCAD\tCanadian Dollar\t1\t#####\t\\d{5}(-\\d{4})?\ten-CA,fr-CA\t6251999\tUS\t");
@@ -171,18 +182,24 @@ public class GeoNamesParserCountryInfoTests
 
         var batchCallCount = 0;
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessCountryInfoBatchAsync(It.IsAny<IEnumerable<CountryInfoRecord>>(), ct))
-            .Callback((IEnumerable<CountryInfoRecord> reader, CancellationToken ct) => batchCallCount++)
-            .ReturnsAsync((IEnumerable<CountryInfoRecord> b, CancellationToken ct) => b.Count(x => x != null));
+        mockProcessor.Setup(x => x.ProcessCountryInfoRecordAsync(It.IsAny<CountryInfoRecord>(), ct))
+            .Callback((CountryInfoRecord reader, CancellationToken ct) => batchCallCount++)
+            .ReturnsAsync((CountryInfoRecord b, CancellationToken ct) => 0); // Return 0 to simulate batch processing without individual record additions
 
-        var parser = new GeonamesParser(mockProcessor.Object, settings);
+        mockProcessor.Setup(x => x.FinalizeCountryInfoRecordAsync(ct))
+            .ReturnsAsync(() => batchCallCount); // Finalize all item in batch and return count of processed items
+
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseCountryInfoAsync(client, null, ct);
+        var result = await parser.ParseCountryInfoAsync(client,
+            mockProcessor.Object.ProcessCountryInfoRecordAsync,
+            mockProcessor.Object.FinalizeCountryInfoRecordAsync,
+            ct: ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound);
         Assert.Equal(3, result.RecordsProcessed);
-        Assert.Equal(2, batchCallCount); // Should be called twice (2 items, then 1 item)
+        Assert.Equal(3, batchCallCount);
     }
 }

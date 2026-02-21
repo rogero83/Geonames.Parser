@@ -7,6 +7,8 @@ namespace Geonames.Parser.RowParsers;
 
 internal static class RowParser
 {
+    private static readonly StringPool Pool = new StringPool();
+
     private static char Tab => '\t';
     private static ReadOnlySpan<char> Hash => "#".AsSpan();
     private static string True => "1";
@@ -36,25 +38,25 @@ internal static class RowParser
         {
             return new CountryInfoRecord
             {
-                ISO = span[ranges[0]].ToString(),
-                ISO3 = span[ranges[1]].ToString(),
-                ISO_Numeric = span[ranges[2]].ToString(),
-                Fips = span[ranges[3]].ToString(),
-                Country = span[ranges[4]].ToString(),
+                ISO = Pool.GetOrAdd(span[ranges[0]]),
+                ISO3 = Pool.GetOrAdd(span[ranges[1]]),
+                ISO_Numeric = Pool.GetOrAdd(span[ranges[2]]),
+                Fips = Pool.GetOrAdd(span[ranges[3]]),
+                Country = Pool.GetOrAdd(span[ranges[4]]),
                 Capital = span[ranges[5]].ToString(),
                 Area = decimal.Parse(span[ranges[6]], CultureInfo.InvariantCulture),
                 Population = long.Parse(span[ranges[7]], CultureInfo.InvariantCulture),
-                Continent = span[ranges[8]].ToString(),
-                Tld = span[ranges[9]].ToString(),
-                CurrencyCode = span[ranges[10]].ToString(),
-                CurrencyName = span[ranges[11]].ToString(),
+                Continent = Pool.GetOrAdd(span[ranges[8]]),
+                Tld = Pool.GetOrAdd(span[ranges[9]]),
+                CurrencyCode = Pool.GetOrAdd(span[ranges[10]]),
+                CurrencyName = Pool.GetOrAdd(span[ranges[11]]),
                 Phone = span[ranges[12]].ToString(),
                 Postal_Code_Format = span[ranges[13]].ToString(),
                 Postal_Code_Regex = span[ranges[14]].ToString(),
                 Languages = span[ranges[15]].ToString(),
                 GeonameId = int.Parse(span[ranges[16]], CultureInfo.InvariantCulture),
                 Neighbours = span[ranges[17]].ToString(),
-                EquivalentFipsCode = span[ranges[18]].ToString()
+                EquivalentFipsCode = Pool.GetOrAdd(span[ranges[18]])
             };
         }
         catch (Exception e)
@@ -97,19 +99,19 @@ internal static class RowParser
                 Longitude = double.Parse(span[ranges[5]], CultureInfo.InvariantCulture),
                 FeatureClass = FieldParser.ParseEnum<GeonamesFeatureClass>(span[ranges[6]]),
                 FeatureCode = FieldParser.ParseEnum<GeonamesFeatureCode>(span[ranges[7]]),
-                CountryCode = span[ranges[8]].ToString(),
-                Cc2 = span[ranges[9]].ToString(),
-                Admin1Code = span[ranges[10]].ToString(),
-                Admin2Code = span[ranges[11]].ToString(),
-                Admin3Code = span[ranges[12]].ToString(),
-                Admin4Code = span[ranges[13]].ToString(),
+                CountryCode = Pool.GetOrAdd(span[ranges[8]]),
+                Cc2 = Pool.GetOrAdd(span[ranges[9]]),
+                Admin1Code = Pool.GetOrAdd(span[ranges[10]]),
+                Admin2Code = Pool.GetOrAdd(span[ranges[11]]),
+                Admin3Code = Pool.GetOrAdd(span[ranges[12]]),
+                Admin4Code = Pool.GetOrAdd(span[ranges[13]]),
                 Population = span[ranges[14]].IsEmpty ? null
                     : long.Parse(span[ranges[14]], CultureInfo.InvariantCulture),
                 Elevation = span[ranges[15]].IsEmpty ? null
                     : int.Parse(span[ranges[15]], CultureInfo.InvariantCulture),
                 Dem = span[ranges[16]].IsEmpty ? null
                     : int.Parse(span[ranges[16]], CultureInfo.InvariantCulture),
-                Timezone = span[ranges[17]].ToString(),
+                Timezone = Pool.GetOrAdd(span[ranges[17]]),
                 ModificationDate = FieldParser.ParseDateOnly(span[ranges[18]])
             };
         }
@@ -143,7 +145,7 @@ internal static class RowParser
         {
             return new Admin1CodeRecord
             {
-                Code = span[ranges[0]].ToString(),
+                Code = Pool.GetOrAdd(span[ranges[0]]),
                 Name = span[ranges[1]].ToString(),
                 NameAscii = span[ranges[2]].ToString(),
                 GeonameId = int.Parse(span[ranges[3]], CultureInfo.InvariantCulture)
@@ -179,7 +181,7 @@ internal static class RowParser
         {
             return new Admin2CodeRecord
             {
-                Code = span[ranges[0]].ToString(),
+                Code = Pool.GetOrAdd(span[ranges[0]]),
                 Name = span[ranges[1]].ToString(),
                 NameAscii = span[ranges[2]].ToString(),
                 GeonameId = int.Parse(span[ranges[3]], CultureInfo.InvariantCulture)
@@ -216,7 +218,7 @@ internal static class RowParser
             {
                 AlternateNameId = int.Parse(span[ranges[0]], CultureInfo.InvariantCulture),
                 GeonameId = int.Parse(span[ranges[1]], CultureInfo.InvariantCulture),
-                IsoLanguage = span[ranges[2]].ToString(),
+                IsoLanguage = Pool.GetOrAdd(span[ranges[2]]),
                 AlternateName = span[ranges[3]].ToString(),
                 IsPreferredName = span[ranges[4]].ToString() == True,
                 IsShortName = span[ranges[5]].ToString() == True,
@@ -255,8 +257,8 @@ internal static class RowParser
         {
             return new TimeZoneRecord
             {
-                CountryCode = span[ranges[0]].ToString(),
-                TimeZoneId = span[ranges[1]].ToString(),
+                CountryCode = Pool.GetOrAdd(span[ranges[0]]),
+                TimeZoneId = Pool.GetOrAdd(span[ranges[1]]),
                 GMTOffset = double.Parse(span[ranges[2]], CultureInfo.InvariantCulture),
                 DSTOffset = double.Parse(span[ranges[3]], CultureInfo.InvariantCulture),
                 RawOffset = double.Parse(span[ranges[4]], CultureInfo.InvariantCulture)
@@ -291,15 +293,15 @@ internal static class RowParser
         {
             return new PostalCodeRecord
             {
-                CountryCode = span[ranges[0]].ToString(),
+                CountryCode = Pool.GetOrAdd(span[ranges[0]]),
                 PostalCode = span[ranges[1]].ToString(),
                 PlaceName = span[ranges[2]].ToString(),
                 Admin1Name = span[ranges[3]].ToString(),
-                Admin1Code = span[ranges[4]].ToString(),
+                Admin1Code = Pool.GetOrAdd(span[ranges[4]]),
                 Admin2Name = span[ranges[5]].ToString(),
-                Admin2Code = span[ranges[6]].ToString(),
+                Admin2Code = Pool.GetOrAdd(span[ranges[6]]),
                 Admin3Name = span[ranges[7]].ToString(),
-                Admin3Code = span[ranges[8]].ToString(),
+                Admin3Code = Pool.GetOrAdd(span[ranges[8]]),
                 Latitude = double.Parse(span[ranges[9]], CultureInfo.InvariantCulture),
                 Longitude = double.Parse(span[ranges[10]], CultureInfo.InvariantCulture),
                 Accuracy = int.Parse(span[ranges[11]], CultureInfo.InvariantCulture)

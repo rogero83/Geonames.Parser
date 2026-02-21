@@ -33,13 +33,16 @@ public class GeonamesParserAlternateNamesV2Tests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessAlternateNamesV2BatchAsync(It.IsAny<List<AlternateNamesV2Record>>(), ct))
-            .ReturnsAsync((List<AlternateNamesV2Record> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessAlternateNamesV2RecordAsync(It.IsAny<AlternateNamesV2Record>(), ct))
+            .ReturnsAsync((AlternateNamesV2Record b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseAlternateNamesV2DataAsync(client, isoCode, null, ct);
+        var result = await parser.ParseAlternateNamesV2DataAsync(client, isoCode,
+            mockProcessor.Object.ProcessAlternateNamesV2RecordAsync,
+            mockProcessor.Object.FinalizeAlternateNamesV2RecordAsync,
+            null, ct);
 
         // Assert
         Assert.Equal(2, result.RecordsFound);
@@ -67,10 +70,13 @@ public class GeonamesParserAlternateNamesV2Tests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseAlternateNamesV2DataAsync(client, isoCode, null, ct);
+        var result = await parser.ParseAlternateNamesV2DataAsync(client, isoCode,
+            mockProcessor.Object.ProcessAlternateNamesV2RecordAsync,
+            mockProcessor.Object.FinalizeAlternateNamesV2RecordAsync,
+            null, ct);
 
         // Assert
         Assert.Equal(0, result.RecordsProcessed);
@@ -93,13 +99,16 @@ public class GeonamesParserAlternateNamesV2Tests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessAlternateNamesV2BatchAsync(It.IsAny<List<AlternateNamesV2Record>>(), ct))
-            .ReturnsAsync((List<AlternateNamesV2Record> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessAlternateNamesV2RecordAsync(It.IsAny<AlternateNamesV2Record>(), ct))
+            .ReturnsAsync((AlternateNamesV2Record b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseAlternateNamesV2DataAsync(client, isoCode, null, ct);
+        var result = await parser.ParseAlternateNamesV2DataAsync(client, isoCode,
+            mockProcessor.Object.ProcessAlternateNamesV2RecordAsync,
+            mockProcessor.Object.FinalizeAlternateNamesV2RecordAsync,
+            null, ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound);
@@ -124,13 +133,16 @@ public class GeonamesParserAlternateNamesV2Tests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessAlternateNamesV2BatchAsync(It.IsAny<List<AlternateNamesV2Record>>(), ct))
-            .ReturnsAsync((List<AlternateNamesV2Record> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessAlternateNamesV2RecordAsync(It.IsAny<AlternateNamesV2Record>(), ct))
+            .ReturnsAsync((AlternateNamesV2Record b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act - only include English names
-        var result = await parser.ParseAlternateNamesV2DataAsync(client, isoCode, r => r.IsoLanguage == "en", ct);
+        var result = await parser.ParseAlternateNamesV2DataAsync(client, isoCode,
+            mockProcessor.Object.ProcessAlternateNamesV2RecordAsync,
+            mockProcessor.Object.FinalizeAlternateNamesV2RecordAsync,
+            r => r.IsoLanguage == "en", ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound);
@@ -144,10 +156,13 @@ public class GeonamesParserAlternateNamesV2Tests
     {
         // Arrange
         var mockProcessor = new Mock<IDataProcessor>();
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseAlternateNamesV2DataAsync((HttpClient)null, "INVALID", null, ct);
+        var result = await parser.ParseAlternateNamesV2DataAsync((HttpClient)null, "INVALID",
+            mockProcessor.Object.ProcessAlternateNamesV2RecordAsync,
+            mockProcessor.Object.FinalizeAlternateNamesV2RecordAsync,
+            null, ct);
 
         // Assert
         Assert.Equal(0, result.RecordsProcessed);
@@ -172,14 +187,17 @@ public class GeonamesParserAlternateNamesV2Tests
 
         var mockProcessor = new Mock<IDataProcessor>();
         var capturedBatch = new List<AlternateNamesV2Record>();
-        mockProcessor.Setup(x => x.ProcessAlternateNamesV2BatchAsync(It.IsAny<IEnumerable<AlternateNamesV2Record>>(), ct))
-            .Callback((IEnumerable<AlternateNamesV2Record> b, CancellationToken ct) => capturedBatch.AddRange(b))
-            .ReturnsAsync((List<AlternateNamesV2Record> b, CancellationToken ct) => b.Count);
+        mockProcessor.Setup(x => x.ProcessAlternateNamesV2RecordAsync(It.IsAny<AlternateNamesV2Record>(), ct))
+            .Callback((AlternateNamesV2Record b, CancellationToken ct) => capturedBatch.Add(b))
+            .ReturnsAsync((AlternateNamesV2Record b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseAlternateNamesV2DataAsync(client, isoCode, null, ct);
+        var result = await parser.ParseAlternateNamesV2DataAsync(client, isoCode,
+            mockProcessor.Object.ProcessAlternateNamesV2RecordAsync,
+            mockProcessor.Object.FinalizeAlternateNamesV2RecordAsync,
+            null, ct);
 
         // Assert
         Assert.Equal(4, result.RecordsFound);

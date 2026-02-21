@@ -2,7 +2,6 @@ using Geonames.Parser.Contract.Abstractions;
 using Geonames.Parser.Contract.Models;
 using Geonames.Parser.Tests.Utility;
 using Moq;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -29,13 +28,16 @@ public class GeonamesParserAdmin1CodesTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessAdmin1CodeBatchAsync(It.IsAny<IEnumerable<Admin1CodeRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<Admin1CodeRecord> batch, CancellationToken ct) => batch.Count());
+        mockProcessor.Setup(x => x.ProcessAdmin1CodeRecordAsync(It.IsAny<Admin1CodeRecord>(), ct))
+            .ReturnsAsync((Admin1CodeRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseAdmin1CodesAsync(client, null, ct);
+        var result = await parser.ParseAdmin1CodesAsync(client,
+            mockProcessor.Object.ProcessAdmin1CodeRecordAsync,
+            mockProcessor.Object.FinalizeAdmin1CodeRecordAsync,
+            null, ct);
 
         // Assert
         Assert.Equal(2, result.RecordsFound);
@@ -58,13 +60,16 @@ public class GeonamesParserAdmin1CodesTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessAdmin1CodeBatchAsync(It.IsAny<IEnumerable<Admin1CodeRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<Admin1CodeRecord> batch, CancellationToken ct) => batch.Count());
+        mockProcessor.Setup(x => x.ProcessAdmin1CodeRecordAsync(It.IsAny<Admin1CodeRecord>(), ct))
+            .ReturnsAsync((Admin1CodeRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseAdmin1CodesAsync(client, null, ct);
+        var result = await parser.ParseAdmin1CodesAsync(client,
+            mockProcessor.Object.ProcessAdmin1CodeRecordAsync,
+            mockProcessor.Object.FinalizeAdmin1CodeRecordAsync,
+            null, ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound);
@@ -87,13 +92,16 @@ public class GeonamesParserAdmin1CodesTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessAdmin1CodeBatchAsync(It.IsAny<IEnumerable<Admin1CodeRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<Admin1CodeRecord> batch, CancellationToken ct) => batch.Count());
+        mockProcessor.Setup(x => x.ProcessAdmin1CodeRecordAsync(It.IsAny<Admin1CodeRecord>(), ct))
+            .ReturnsAsync((Admin1CodeRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act - only include CA records
-        var result = await parser.ParseAdmin1CodesAsync(client, r => r.Code.EndsWith("CA"), ct);
+        var result = await parser.ParseAdmin1CodesAsync(client,
+            mockProcessor.Object.ProcessAdmin1CodeRecordAsync,
+            mockProcessor.Object.FinalizeAdmin1CodeRecordAsync,
+            r => r.Code.EndsWith("CA"), ct);
 
         // Assert
         Assert.Equal(3, result.RecordsFound); // totalRecords = 3
@@ -116,13 +124,16 @@ public class GeonamesParserAdmin1CodesTests
         using var client = new HttpClient(new TestHttpMessageHandler(httpContent));
 
         var mockProcessor = new Mock<IDataProcessor>();
-        mockProcessor.Setup(x => x.ProcessAdmin1CodeBatchAsync(It.IsAny<IEnumerable<Admin1CodeRecord>>(), ct))
-            .ReturnsAsync((IEnumerable<Admin1CodeRecord> batch, CancellationToken ct) => batch.Count());
+        mockProcessor.Setup(x => x.ProcessAdmin1CodeRecordAsync(It.IsAny<Admin1CodeRecord>(), ct))
+            .ReturnsAsync((Admin1CodeRecord b, CancellationToken ct) => 1);
 
-        var parser = new GeonamesParser(mockProcessor.Object);
+        var parser = new GeonamesParser();
 
         // Act
-        var result = await parser.ParseAdmin1CodesAsync(client, null, ct);
+        var result = await parser.ParseAdmin1CodesAsync(client,
+            mockProcessor.Object.ProcessAdmin1CodeRecordAsync,
+            mockProcessor.Object.FinalizeAdmin1CodeRecordAsync,
+            null, ct);
 
         // Assert
         Assert.Equal(1, result.RecordsFound);

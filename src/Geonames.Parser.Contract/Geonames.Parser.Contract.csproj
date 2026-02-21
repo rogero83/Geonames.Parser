@@ -7,7 +7,7 @@
 		<IsPackable>true</IsPackable>
 
 		<PackageId>R83.Geonames.Parser.Contract</PackageId>
-		<Version>0.3.0</Version>
+		<Version>1.0.0</Version>
 		<Authors>Ruggiero Centaro (aka Rogero83)</Authors>
 		<Description>Geonames parser contract</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>

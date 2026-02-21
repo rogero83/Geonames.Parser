@@ -6,7 +6,7 @@ using Geonames.Parser.Contract.Models;
 Console.WriteLine("Geonames Test Console");
 
 IDataProcessor processor = new ConsoleDataProcessor();
-var parser = new GeonamesParser(processor);
+var parser = new GeonamesParser();
 
 ParserResult? result = null;
 while (true)
@@ -25,7 +25,8 @@ while (true)
     {
         if (selectedOption == "1")
         {
-            result = await parser.ParseCountryInfoAsync();
+            result = await parser.ParseCountryInfoAsync(processor.ProcessCountryInfoRecordAsync,
+                processor.FinalizeCountryInfoRecordAsync);
         }
         else if (selectedOption == "2")
         {
@@ -42,7 +43,9 @@ while (true)
                 return record.CountryCode == "US";
             });
 
-            result = await parser.ParseAdmin1CodesAsync(admin1Filter);
+            result = await parser.ParseAdmin1CodesAsync(processor.ProcessAdmin1CodeRecordAsync,
+                processor.FinalizeAdmin1CodeRecordAsync,
+                filter: admin1Filter);
         }
         else if (selectedOption == "5")
         {
@@ -51,16 +54,20 @@ while (true)
                 return record.CountryCode == "US" && record.Admin1Code == "AL";
             });
 
-            result = await parser.ParseAdmin2CodesAsync(admin1Filter);
+            result = await parser.ParseAdmin2CodesAsync(processor.ProcessAdmin2CodeRecordAsync,
+                processor.FinalizeAdmin2CodeRecordAsync,
+                filter: admin1Filter);
         }
         else if (selectedOption == "6")
         {
-            var admin1Filter = new Func<TimeZoneRecord, bool>(record =>
+            var timeZoneFilter = new Func<TimeZoneRecord, bool>(record =>
             {
                 return record.CountryCode.StartsWith('I');
             });
 
-            result = await parser.ParseTimeZoneDataAsync(admin1Filter);
+            result = await parser.ParseTimeZoneDataAsync(processor.ProcessTimeZoneRecordAsync,
+                processor.FinalizeTimeZoneRecordAsync,
+                filter: timeZoneFilter);
         }
         else if (selectedOption == "7")
         {
@@ -99,7 +106,7 @@ while (true)
     }
 }
 
-static async Task<ParserResult> TestingGeonamesParser(
+async Task<ParserResult> TestingGeonamesParser(
     IGeonamesParser parser,
     ParserResult? result)
 {
@@ -110,8 +117,7 @@ static async Task<ParserResult> TestingGeonamesParser(
 
     //var filter = new Func<GeonameRecord, bool>(record =>
     //{
-    //    // Example filter: Only include records with a population greater than 1000
-    //    return record.FeatureClass == GeoNamesFeatureClass.P;
+    //    return record.FeatureCode == Geonames.Parser.Contract.Enums.GeonamesFeatureCode.ADM3;
     //});
 
     //var filter = new Func<GeonameRecord, bool>(record =>
@@ -120,12 +126,15 @@ static async Task<ParserResult> TestingGeonamesParser(
     //        && LocalizationFeatureCodes.PopulatedPlaces.Primary.Contains(record.FeatureCode.Value);
     //});
 
-    result = await parser.ParseGeoNamesDataAsync(isoCode, filter);
+    result = await parser.ParseGeoNamesDataAsync(isoCode,
+        processor.ProcessGeoNameRecordAsync,
+        processor.FinalizeGeoNameRecordAsync,
+        filter);
 
     return result;
 }
 
-static async Task<ParserResult?> TestingAlternateNameV2Parser(
+async Task<ParserResult?> TestingAlternateNameV2Parser(
     IGeonamesParser parser,
     ParserResult? result)
 {
@@ -142,12 +151,15 @@ static async Task<ParserResult?> TestingAlternateNameV2Parser(
     //    return record.From.HasValue || record.To.HasValue;
     //});
 
-    result = await parser.ParseAlternateNamesV2DataAsync(isoCode, filters);
+    result = await parser.ParseAlternateNamesV2DataAsync(isoCode,
+        processor.ProcessAlternateNamesV2RecordAsync,
+        processor.FinalizeAlternateNamesV2RecordAsync,
+        filter: filters);
 
     return result;
 }
 
-static async Task<ParserResult?> TestingPostalCode(GeonamesParser parser, ParserResult? result)
+async Task<ParserResult?> TestingPostalCode(GeonamesParser parser, ParserResult? result)
 {
     Console.Write("Insert ISO code or 'ALL' ");
     var isoCode = Console.ReadLine() ?? string.Empty;
@@ -157,6 +169,9 @@ static async Task<ParserResult?> TestingPostalCode(GeonamesParser parser, Parser
         return true; // Example filter: Include all records
     });
 
-    result = await parser.ParsePostalCodeDataAsync(isoCode, filter);
+    result = await parser.ParsePostalCodeDataAsync(isoCode,
+        processor.ProcessPostalCodeRecordAsync,
+        processor.FinalizePostalCodeRecordAsync,
+        filter: filter);
     return result;
 }
